@@ -1,87 +1,80 @@
 # pragma pylint: disable=missing-docstring, invalid-name, pointless-string-statement
 
 """
-Adaptive_Scalp_v2 - Adaptive Market Regime Scalping Strategy
-============================================================
-Timeframe: 5m
+Adaptive_Scalp_v2 - Trend-Following Scalping Strategy (15m)
+==========================================================
+Timeframe: 15m
 Mode: Futures (long/short)
 Leverage: 5x
 
-Market Regime Detection:
-- Regime 0 (Choppy): ADX < 20 -> Mean Reversion
-- Regime 1 (Transition): ADX 20-25 -> Reduced position / Watch
-- Regime 2 (Strong Trend): ADX > 25 -> Trend Following
+Strategy Philosophy:
+- Pure trend following ONLY (no mean reversion)
+- Only enter when market regime is strong (Regime 2: ADX > 25)
+- Let profits run in strong trends
+- Tight stop loss for quick cut
 
-Entry Logic:
-- Long (Choppy): Close < BB_lower AND RSI < 35
-- Long (Trend): EMA fast > slow AND Close > EMA fast AND ADX > 25
-- Short: Inverse of long conditions
+Entry Conditions:
+- EMA 9/21 crossover confirmation
+- ADX > 25 (strong trend required)
+- Price breakout of recent swing high/low
+- Volume confirmation (> 1.5x MA)
 
 Exit Logic:
-- ROI: Tiered take profit (3% -> 2% -> 1%)
-- Stoploss: ATR-based dynamic stop loss
+- Tiered ROI: 8% -> 5% -> 3% -> 2%
+- Trailing stop: 5% callback
+- Stop loss: ATR x 1.0 (~2.5%)
+- Risk:Reward target 1:3 (2.5% stop -> 8% profit)
 """
 
 import talib.abstract as ta
 from pandas import DataFrame
 
-import freqtrade.vendor.qtpylib.indicators as qtpylib
-from freqtrade.strategy import IntParameter, IStrategy, RealParameter
+from freqtrade.strategy import IStrategy
 
 
 class Adaptive_Scalp_v2(IStrategy):
     """
-    Adaptive Scalp Strategy v2 - Dynamically switches between
-    mean reversion and trend following based on market regime.
+    Trend-Following Scalping Strategy v2
+    Optimized for 15m timeframe with larger moves (5-10%)
+    Only trades in strong trending markets (Regime 2)
     """
 
     # === Timeframe Settings ===
-    timeframe = "5m"
+    timeframe = "15m"
 
     # === Futures / Short Settings ===
     can_short = True
     process_only_new_candles = True
 
     # === Stop Loss Settings ===
-    stoploss = -0.05  # Maximum stop loss: 5%
+    stoploss = -0.025  # 2.5% max stop loss
     use_custom_stoploss = True
 
-    # === ROI Settings (Tiered) ===
+    # === ROI Settings (Tiered for larger moves) ===
     minimal_roi = {
-        "0": 0.03,  # 3% at 0 minutes
-        "30": 0.02,  # 2% after 30 minutes
-        "60": 0.015,  # 1.5% after 60 minutes
-        "120": 0.01,  # 1% after 120 minutes
+        "0": 0.08,  # 8% at 0 minutes
+        "30": 0.05,  # 5% after 30 minutes
+        "60": 0.03,  # 3% after 60 minutes
+        "120": 0.02,  # 2% after 120 minutes
     }
 
-    # === Regime Detection Parameters ===
-    adx_period = IntParameter(10, 20, default=14, space="buy")
-    adx_strong_threshold = IntParameter(22, 30, default=25, space="buy")
-    adx_weak_threshold = IntParameter(15, 25, default=20, space="buy")
+    # === Trailing Stop Settings ===
+    trailing_stop = True
+    trailing_stop_only_offset_is_reached = True
+    trailing_stop_offset = 0.05  # 5% trailing stop
+    trailing_positive_offset = 0.05
 
-    # === Bollinger Bands Parameters ===
-    bb_length = IntParameter(10, 30, default=20, space="buy")
-    bb_std = RealParameter(1.5, 3.0, default=2.0, space="buy")
+    # === ADX Parameters (Trend Detection) ===
+    adx_period = 14
+    adx_threshold = 25
 
-    # === RSI Parameters ===
-    rsi_length = IntParameter(10, 20, default=14, space="buy")
-    rsi_oversold = IntParameter(20, 35, default=30, space="buy")
-    rsi_overbought = IntParameter(65, 80, default=70, space="sell")
+    # === EMA Parameters (Trend Direction) ===
+    ema_fast_period = 9
+    ema_slow_period = 21
 
-    # === ATR Parameters (Dynamic Stop Loss) ===
-    atr_length = IntParameter(10, 20, default=14, space="sell")
-    atr_multiplier = RealParameter(1.0, 2.0, default=1.5, space="sell")
-
-    # === EMA Parameters (Trend Following) ===
-    ema_fast_length = IntParameter(5, 15, default=9, space="buy")
-    ema_slow_length = IntParameter(15, 30, default=21, space="buy")
-
-    # === Volume MA Parameters ===
-    volume_ma_length = IntParameter(15, 30, default=20, space="buy")
-
-    # === Entry Threshold Parameters ===
-    bb_touch_threshold = RealParameter(0.95, 1.0, default=0.99, space="buy")
-    bb_upper_threshold = RealParameter(1.0, 1.05, default=1.01, space="sell")
+    # === Volume Parameters ===
+    volume_ma_period = 20
+    volume_multiplier = 1.5
 
     def leverage(
         self,
@@ -104,57 +97,56 @@ class Adaptive_Scalp_v2(IStrategy):
         Populate all indicators required for the strategy.
         """
         # === ADX Series (Regime Detection) ===
-        dataframe["adx"] = ta.ADX(dataframe, timeperiod=self.adx_period.value)
-        dataframe["plus_di"] = ta.PLUS_DI(dataframe, timeperiod=self.adx_period.value)
-        dataframe["minus_di"] = ta.MINUS_DI(dataframe, timeperiod=self.adx_period.value)
+        dataframe["adx"] = ta.ADX(dataframe, timeperiod=self.adx_period)
+        dataframe["plus_di"] = ta.PLUS_DI(dataframe, timeperiod=self.adx_period)
+        dataframe["minus_di"] = ta.MINUS_DI(dataframe, timeperiod=self.adx_period)
 
-        # === ATR (Volatility & Dynamic Stop Loss) ===
-        dataframe["atr"] = ta.ATR(dataframe, timeperiod=self.atr_length.value)
+        # === ATR (Dynamic Stop Loss) ===
+        dataframe["atr"] = ta.ATR(dataframe, timeperiod=self.adx_period)
         dataframe["atr_pct"] = dataframe["atr"] / dataframe["close"]
 
-        # === Bollinger Bands ===
-        bollinger = qtpylib.bollinger_bands(
-            qtpylib.typical_price(dataframe),
-            window=self.bb_length.value,
-            stds=self.bb_std.value,
-        )
-        dataframe["bb_lowerband"] = bollinger["lower"]
-        dataframe["bb_middleband"] = bollinger["mid"]
-        dataframe["bb_upperband"] = bollinger["upper"]
-
-        # BB %B (Price Position)
-        bb_range = dataframe["bb_upperband"] - dataframe["bb_lowerband"]
-        dataframe["bb_pct"] = (dataframe["close"] - dataframe["bb_lowerband"]) / bb_range
-
-        # === RSI ===
-        dataframe["rsi"] = ta.RSI(dataframe, timeperiod=self.rsi_length.value)
-
         # === EMA Series (Trend Direction) ===
-        dataframe["ema_fast"] = ta.EMA(dataframe, timeperiod=self.ema_fast_length.value)
-        dataframe["ema_slow"] = ta.EMA(dataframe, timeperiod=self.ema_slow_length.value)
+        dataframe["ema_fast"] = ta.EMA(dataframe, timeperiod=self.ema_fast_period)
+        dataframe["ema_slow"] = ta.EMA(dataframe, timeperiod=self.ema_slow_period)
 
-        # EMA Alignment
-        dataframe["ema_aligned_long"] = dataframe["ema_fast"] > dataframe["ema_slow"]
-        dataframe["ema_aligned_short"] = dataframe["ema_fast"] < dataframe["ema_slow"]
+        # EMA Crossover Signals
+        dataframe["ema_cross_up"] = (dataframe["ema_fast"] > dataframe["ema_slow"]) & (
+            dataframe["ema_fast"].shift(1) <= dataframe["ema_slow"].shift(1)
+        )
+        dataframe["ema_cross_down"] = (dataframe["ema_fast"] < dataframe["ema_slow"]) & (
+            dataframe["ema_fast"].shift(1) >= dataframe["ema_slow"].shift(1)
+        )
+
+        # EMA Alignment (trend direction)
+        dataframe["ema_bullish"] = dataframe["ema_fast"] > dataframe["ema_slow"]
+        dataframe["ema_bearish"] = dataframe["ema_fast"] < dataframe["ema_slow"]
 
         # === Volume MA ===
         dataframe["volume_ma"] = ta.SMA(
             dataframe,
-            timeperiod=self.volume_ma_length.value,
+            timeperiod=self.volume_ma_period,
             price="volume",
         )
+        dataframe["volume_confirmed"] = dataframe["volume"] > (
+            dataframe["volume_ma"] * self.volume_multiplier
+        )
+
+        # === Swing High/Low (Breakout Detection) ===
+        # Lookback period for swing detection
+        swing_window = 12  # ~3 hours on 15m chart
+
+        dataframe["swing_high"] = dataframe["high"].rolling(window=swing_window).max().shift(1)
+        dataframe["swing_low"] = dataframe["low"].rolling(window=swing_window).min().shift(1)
+
+        # Price breakout signals
+        dataframe["breakout_up"] = dataframe["close"] > dataframe["swing_high"]
+        dataframe["breakout_down"] = dataframe["close"] < dataframe["swing_low"]
 
         # === Regime Classification ===
-        # Regime 2 (Strong Trend): ADX > strong_threshold
-        dataframe["regime_strong"] = dataframe["adx"] > self.adx_strong_threshold.value
+        # Regime 2 (Strong Trend): ADX > 25
+        dataframe["regime_strong"] = dataframe["adx"] > self.adx_threshold
 
-        # Regime 0 (Choppy): ADX < weak_threshold
-        dataframe["regime_choppy"] = dataframe["adx"] < self.adx_weak_threshold.value
-
-        # Regime 1 (Transition): Between choppy and strong
-        dataframe["regime_transition"] = ~dataframe["regime_strong"] & ~dataframe["regime_choppy"]
-
-        # Trend Direction
+        # Trend Direction (DI based)
         dataframe["bullish"] = dataframe["plus_di"] > dataframe["minus_di"]
         dataframe["bearish"] = dataframe["minus_di"] > dataframe["plus_di"]
 
@@ -162,63 +154,56 @@ class Adaptive_Scalp_v2(IStrategy):
 
     def populate_entry_trend(self, dataframe: DataFrame, metadata: dict) -> DataFrame:
         """
-        Populate entry signals based on market regime.
-        ONLY enter when specific regime conditions are met (no OR mixing).
+        Populate entry signals based on pure trend following (Regime 2 ONLY).
+        No mean reversion entries.
         """
         dataframe["enter_long"] = 0
         dataframe["enter_short"] = 0
 
-        # === Regime 0 (Choppy): Mean Reversion Entry ===
-        # Long: Price below BB lower AND RSI oversold
-        cond_mr_long = (
-            dataframe["regime_choppy"]
-            & (dataframe["close"] < dataframe["bb_lowerband"] * self.bb_touch_threshold.value)
-            & (dataframe["rsi"] < self.rsi_oversold.value)
-            & (dataframe["volume"] > dataframe["volume_ma"])
-        )
+        # === Long Entry Conditions ===
+        # 1. Strong trend regime (ADX > 25)
+        # 2. EMA bullish alignment (fast > slow)
+        # 3. EMA bullish crossover (recent)
+        # 4. Price breakout above swing high
+        # 5. Bullish DI confirmation
+        # 6. Volume confirmation
 
-        # Short: Price above BB upper AND RSI overbought
-        cond_mr_short = (
-            dataframe["regime_choppy"]
-            & (dataframe["close"] > dataframe["bb_upperband"] * self.bb_upper_threshold.value)
-            & (dataframe["rsi"] > self.rsi_overbought.value)
-            & (dataframe["volume"] > dataframe["volume_ma"])
-        )
-
-        # === Regime 2 (Strong Trend): Trend Following Entry ===
-        # Long: EMA aligned, price above fast EMA, ADX strong, bullish DI
-        cond_tf_long = (
+        cond_long = (
             dataframe["regime_strong"]
+            & dataframe["ema_bullish"]
+            & dataframe["ema_cross_up"]
+            & dataframe["breakout_up"]
             & dataframe["bullish"]
-            & dataframe["ema_aligned_long"]
-            & (dataframe["close"] > dataframe["ema_fast"])
-            & (dataframe["volume"] > dataframe["volume_ma"])
+            & dataframe["volume_confirmed"]
         )
 
-        # Short: EMA aligned short, price below fast EMA, ADX strong, bearish DI
-        cond_tf_short = (
+        # === Short Entry Conditions ===
+        # 1. Strong trend regime (ADX > 25)
+        # 2. EMA bearish alignment (fast < slow)
+        # 3. EMA bearish crossover (recent)
+        # 4. Price breakout below swing low
+        # 5. Bearish DI confirmation
+        # 6. Volume confirmation
+
+        cond_short = (
             dataframe["regime_strong"]
+            & dataframe["ema_bearish"]
+            & dataframe["ema_cross_down"]
+            & dataframe["breakout_down"]
             & dataframe["bearish"]
-            & dataframe["ema_aligned_short"]
-            & (dataframe["close"] < dataframe["ema_fast"])
-            & (dataframe["volume"] > dataframe["volume_ma"])
+            & dataframe["volume_confirmed"]
         )
-
-        # === Regime 1 (Transition): NO ENTRY ===
-        # Transition regime is uncertain - do not trade
 
         # Apply entries
-        dataframe.loc[cond_mr_long, "enter_long"] = 1
-        dataframe.loc[cond_mr_short, "enter_short"] = 1
-        dataframe.loc[cond_tf_long, "enter_long"] = 1
-        dataframe.loc[cond_tf_short, "enter_short"] = 1
+        dataframe.loc[cond_long, "enter_long"] = 1
+        dataframe.loc[cond_short, "enter_short"] = 1
 
         return dataframe
 
     def populate_exit_trend(self, dataframe: DataFrame, metadata: dict) -> DataFrame:
         """
         Populate exit signals.
-        Exit signals are primarily handled by ROI and custom_stoploss.
+        Exit signals handled primarily by ROI and custom_stoploss.
         """
         dataframe["exit_long"] = 0
         dataframe["exit_short"] = 0
@@ -236,8 +221,8 @@ class Adaptive_Scalp_v2(IStrategy):
         **kwargs,
     ) -> float:
         """
-        Custom dynamic stoploss using ATR multiplier.
-        Returns the stoploss percentage relative to entry price.
+        Custom dynamic stoploss using ATR x 1.0.
+        Tight stop for quick loss cut.
         """
         dataframe, _ = self.dp.get_analyzed_dataframe(pair, self.timeframe)
         if dataframe.empty:
@@ -246,24 +231,23 @@ class Adaptive_Scalp_v2(IStrategy):
         last_candle = dataframe.iloc[-1]
         atr = last_candle["atr"]
 
-        # Calculate stoploss distance based on ATR
-        stoploss_distance = (atr * self.atr_multiplier.value) / current_rate
+        # ATR-based stop distance (~2-3% depending on volatility)
+        stoploss_distance = atr / current_rate
         return -stoploss_distance
 
-    # === Hyperopt Space Configuration ===
     @property
     def protections(self):
         return [
             {
                 "method": "CooldownPeriod",
-                "lookback_period_candles": 60,
-                "stop_duration_candles": 10,
+                "lookback_period_candles": 30,
+                "stop_duration_candles": 5,
             },
             {
                 "method": "MaxDrawdown",
                 "lookback_period_candles": 60,
-                "trade_limit": 20,
-                "stop_duration_candles": 30,
+                "trade_limit": 15,
+                "stop_duration_candles": 20,
                 "max_allowed_drawdown": 0.15,
             },
         ]
