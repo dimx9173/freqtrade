@@ -3,9 +3,53 @@ cd $HOME/freqtrade
 
 # ==============================================
 # Auto Hyperopt Pipeline
-# 用法: bash hyperopt.sh [threads] [strategy_id_or_name]
-#   threads:           線程數 (預設 4)
-#   strategy_id_or_name: 只想優化特定策略 (1-6 或策略名)，不傳則跑全部
+# ==============================================
+#
+# 用法:
+#   bash hyperopt.sh [threads] [strategy_id_or_name]
+#
+# 引數:
+#   threads              執行緒數（預設 4），建議 4-8
+#   strategy_id_or_name  只優化特定策略，不傳則跑全部 6 個
+#
+# strategy_id_or_name 可用:
+#   1          → NASOSv4
+#   2          → PSV5_Hybrid
+#   3          → BB_RPB_TSL_BI
+#   4          → NASOSv5_mod3
+#   5          → SMAOffsetProtectOptV1
+#   6          → ElliotV5_SMA_ninja
+#   NASOSv4    → 只跑 NASOSv4（可用策略名）
+#
+# 範例:
+#   bash hyperopt.sh                          # 跑全部 6 個策略，4 執行緒
+#   bash hyperopt.sh 8                        # 跑全部，8 執行緒
+#   bash hyperopt.sh 4 1                      # 只跑策略 1（NASOSv4），4 執行緒
+#   bash hyperopt.sh 4 NASOSv5_mod3           # 只跑 NASOSv5_mod3
+#   bash hyperopt.sh 2 ElliotV5_SMA_ninja    # 只跑 ElliotV5，2 執行緒
+#   bash hyperopt.sh 8 5                      # 只跑 SMAOffsetProtectOptV1，8 執行緒
+#
+# 流程:
+#   1. 停止對應 Bot（如有執行）
+#   2. 執行 hyperopt（timerange 自動計算）
+#   3. 匯出最佳參數到 strategies/prod/{strategy}.json
+#   4. 重啟 Bot
+#   5. 自動 commit + push 到 brian/main
+#   6. 冷卻 10 秒後執行下一策略
+#
+# 策略 Spaces 對照:
+#   1  NASOSv4              → buy, sell
+#   2  PSV5_Hybrid          → buy, stoploss, trailing, roi
+#   3  BB_RPB_TSL_BI        → buy, sell
+#   4  NASOSv5_mod3         → buy, sell
+#   5  SMAOffsetProtectOptV1 → buy, sell（12 個月）
+#   6  ElliotV5_SMA_ninja    → buy, sell（SharpeHyperOptLossDaily）
+#
+# 輸出:
+#   user_data/hyperopt_results/summary_results_{strategy}.log
+#   user_data/logs/freqtrade_{strategy}.log
+#   user_data/strategies/prod/{strategy}.json
+#
 # ==============================================
 
 THREADS=${1:-4}
