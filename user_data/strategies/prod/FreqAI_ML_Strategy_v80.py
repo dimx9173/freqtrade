@@ -158,6 +158,22 @@ class FreqAI_ML_Strategy_v80(IStrategy):
         """Calculate Smoothed Moving Average"""
         return series.ewm(alpha=1 / period, min_periods=period).mean()
 
+    def set_freqai_targets(self, dataframe: DataFrame, metadata: dict, **kwargs) -> DataFrame:
+        """
+        FreqAI target: predict the future return over label_period_candles (24 = 6 hours for 15m).
+        The label_pipeline will standardize this to a z-score.
+        Thresholds of 0.65-0.72 correspond to ~0.65-0.72 standard deviations above mean.
+        """
+        label_period = self.freqai_info.get("feature_parameters", {}).get("label_period_candles", 24)
+        dataframe["&ml_prediction"] = (
+            dataframe["close"]
+            .shift(-label_period)
+            .rolling(label_period).mean()
+            / dataframe["close"]
+            - 1
+        )
+        return dataframe
+
     def populate_indicators(self, dataframe: DataFrame, metadata: dict) -> DataFrame:
         """
         V80 Enhanced Indicator System with Regime Detection
@@ -660,9 +676,8 @@ class FreqAI_ML_Strategy_v80(IStrategy):
         current_time,
         current_rate,
         current_profit: float,
-        dataframe: DataFrame,
         **kwargs,
-    ) -> str:
+    ) -> str | bool | None:
         """
         V80 CUSTOM EXIT - ML Reversal + Regime Change Protection
         """
@@ -671,10 +686,13 @@ class FreqAI_ML_Strategy_v80(IStrategy):
             return None
 
         try:
+            dataframe = self.dp.get_pair_dataframe(pair=pair, timeframe=self.timeframe)
             ml_prediction = dataframe["&ml_prediction"].iloc[-1]
-            ml_confidence = dataframe["&ml_confidence"].iloc[-1]
+            ml_confidence = dataframe.get("&ml_confidence", 0.5)
+            if hasattr(ml_confidence, 'iloc'):
+                ml_confidence = ml_confidence.iloc[-1]
             regime = dataframe["market_regime"].iloc[-1]
-        except (KeyError, IndexError):
+        except (KeyError, IndexError, Exception):
             return None
 
         # ===========================================
@@ -699,8 +717,11 @@ class FreqAI_ML_Strategy_v80(IStrategy):
         current_time,
         current_rate,
         proposed_stake: float,
-        min_stake: float,
+        min_stake: float | None,
         max_stake: float,
+        leverage: float,
+        entry_tag: str | None,
+        side: str,
         **kwargs,
     ) -> float:
         """
