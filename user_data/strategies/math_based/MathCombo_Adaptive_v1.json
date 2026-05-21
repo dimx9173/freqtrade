@@ -1,0 +1,36 @@
+{
+    "strategy_name": "MathCombo_Adaptive_v1",
+    "hyperopt_file": "strategy_MathCombo_Adaptive_v1_2026-05-21_11-11-10.fthypt",
+    "timestamp": "2026-05-21_11-11-10",
+    "timerange": "20251119-20260519",
+    "hyperopt_loss": "SortinoHyperOptLoss",
+    "epochs": 500,
+    "best_params": {
+        "adx_max": 25.937,
+        "adx_min": 29.779,
+        "dev_mult": 1.849,
+        "window": 243.106,
+        "zscore_threshold": 2.325
+    },
+    "strategy_settings": {
+        "minimal_roi": {"0": 0.03, "30": 0.02, "60": 0.01},
+        "stoploss": -0.02,
+        "trailing_stop": true,
+        "trailing_stop_positive": 0.01,
+        "trailing_stop_positive_offset": 0.025,
+        "trailing_only_offset_is_reached": true
+    },
+    "backtest_result": {
+        "trades": 19,
+        "wins": 8,
+        "draws": 0,
+        "losses": 11,
+        "win_rate": 42.1,
+        "avg_profit": -0.38,
+        "total_profit": -7.15,
+        "total_profit_pct": -0.72,
+        "avg_duration": "9:22:00",
+        "objective": 0.97827,
+        "max_drawdown": "9.124 USDT (0.91%)"
+    }
+}
