@@ -42,8 +42,8 @@ cd $HOME/freqtrade
 #   2  PSV5_Hybrid          → buy, stoploss, trailing, roi
 #   3  BB_RPB_TSL_BI        → buy, sell
 #   4  NASOSv5_mod3         → buy, sell
-#   5  SMAOffsetProtectOptV1 → buy, sell（12 個月）
-#   6  ElliotV5_SMA_ninja    → buy, sell（SharpeHyperOptLossDaily）
+#   5  SMAOffsetProtectOptV1 → buy, sell（9 個月）
+#   6  ElliotV5_SMA_ninja    → buy, sell（ProfitDrawOptLoss）
 #
 # 輸出:
 #   user_data/hyperopt_results/summary_results_{strategy}.log
@@ -64,11 +64,11 @@ echo "========================================"
 # 定義策略列表 (ID|config|strategy|months|epochs|spaces|loss)
 configs=(
   "1|$HOME/freqtrade/user_data/config/config_1.json|NASOSv4|6|500|buy,sell|ProfitDrawDownHyperOptLoss"
-  "2|$HOME/freqtrade/user_data/config/config_2.json|PSV5_Hybrid|6|500|buy,stoploss,trailing,roi|ProfitDrawDownHyperOptLoss"
-  "3|$HOME/freqtrade/user_data/config/config_3.json|BB_RPB_TSL_BI|6|500|buy,sell|ProfitDrawDownHyperOptLoss"
+  "2|$HOME/freqtrade/user_data/config/config_2.json|PSV5_Hybrid|6|500|buy|ProfitDrawDownHyperOptLoss"
+  "3|$HOME/freqtrade/user_data/config/config_3.json|BB_RPB_TSL_BI|6|500|buy,sell|MultiMetricHyperOptLoss"
   "4|$HOME/freqtrade/user_data/config/config_4.json|NASOSv5_mod3|6|500|buy,sell|ProfitDrawDownHyperOptLoss"
-  "5|$HOME/freqtrade/user_data/config/config_5.json|SMAOffsetProtectOptV1|12|500|buy,sell|ProfitDrawDownHyperOptLoss"
-  "6|$HOME/freqtrade/user_data/config/config_6.json|ElliotV5_SMA_ninja|6|300|buy,sell|SharpeHyperOptLossDaily"
+  "5|$HOME/freqtrade/user_data/config/config_5.json|SMAOffsetProtectOptV1|9|500|buy,sell|ProfitDrawDownHyperOptLoss"
+  "6|$HOME/freqtrade/user_data/config/config_6.json|ElliotV5_SMA_ninja|6|400|buy,sell|ProfitDrawOptLoss"
 )
 
 # 確保結果目錄存在
@@ -321,6 +321,9 @@ PYEOF
       echo "WARNING: Commit failed." | tee -a "$summary_results_file"
     fi
   fi
+
+  # 確保工作目錄回到 freqtrade 根，目錄污染會導致後續策略路徑錯誤
+  cd "$HOME/freqtrade"
 
   # 策略間冷卻（避免資源衝突）
   if [[ -z "$TARGET_ID" ]]; then
