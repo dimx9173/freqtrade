@@ -35,7 +35,7 @@ RANDOM_STATE=42
 #   - ElliotV5: Sharpe → ProfitDrawDownHyperOptLoss
 configs=(
   "1|$HOME/freqtrade/user_data/config/config_1.json|NASOSv4|6|400|buy,sell|MultiMetricHyperOptLoss"
-  "2|$HOME/freqtrade/user_data/config/config_2.json|PSV5_Hybrid|6|500|buy,sell|MultiMetricHyperOptLoss"
+  "2|$HOME/freqtrade/user_data/config/config_2.json|PSV5_Hybrid|6|500|buy|MultiMetricHyperOptLoss"
   "3|$HOME/freqtrade/user_data/config/config_3.json|BB_RPB_TSL_BI|6|600|buy,sell|MultiMetricHyperOptLoss"
   "4|$HOME/freqtrade/user_data/config/config_4.json|NASOSv5_mod3|6|400|buy,sell|MultiMetricHyperOptLoss"
   "5|$HOME/freqtrade/user_data/config/config_5.json|SMAOffsetProtectOptV1|9|450|buy,sell|MultiMetricHyperOptLoss"
