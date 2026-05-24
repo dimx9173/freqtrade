@@ -40,9 +40,17 @@
 - **報告**: `strategies/math_based/nsgaii_bb_rpb_tsl_bi/backtest_report.md`
 - **狀態**: ✅ 已驗證
 
-#### Iteration #3 (待執行)
-- **目標**: 確認 +12.65% / 28 trades / 96.4% 數據來源
-- **狀態**: ⚠️ 待確認
+#### Iteration #3 (邏輯修復)
+- **日期**: 2026-05-21
+- **問題**: GA 優化輸出 adx_max (25.937) < adx_min (29.779)，邏輯矛盾
+- **修復**: 交換 adx_max 和 adx_min 值，使 adx_min (25.937) < adx_max (29.779)
+- **驗證**: 使用修正後參數重新 backtest
+  - 交易數: 19
+  - 總利潤: -0.72% (-7.151 USDT)
+  - 勝率: 42.1%
+  - 最大回撤: 0.91%
+- **結論**: 邏輯修復完成，但策略本身收益為負，建議重新優化或檢視策略邏輯
+- **狀態**: ✅ 邏輯矛盾已修復，策略需進一步優化
 
 ---
 
@@ -52,7 +60,7 @@
 - **日期**: 2026-05-21
 - **Session ID**: 20260521_013359
 - **結果**: 129 trades, -0.55%, 55.8% win rate
-- **狀態**: ❌ 需重新優化
+- **狀態**: ❌ 已封存
 
 #### Iteration #2 (GA 優化 - Sortino)
 - **日期**: 2026-05-21
@@ -72,8 +80,8 @@
   - zscore_threshold: 2.325
   - adx_min: 29.779
   - adx_max: 25.937
-- **Hyperopt檔**: `hyperopt_results/strategy_MathCombo_Adaptive_v1_2026-05-21_11-11-10.fthypt`
-- **狀態**: ⚠️ 結果仍為負收益，策略需要重新檢視
+- **Hyperopt檔**: `archive/math_based/strategy_MathCombo_Adaptive_v1_2026-05-21_11-11-10.fthypt`
+- **狀態**: ❌ 已封存
 
 ---
 
@@ -85,11 +93,25 @@
 - **結果**: 215 trades, -24.61%, 47.9% win rate
 - **狀態**: ❌ 需重新優化
 
+#### Iteration #2 (v2 修復)
+- **日期**: 2026-05-24
+- **問題**: timeframe 1h 與 15m backtest 不匹配；entry 條件過嚴 (ADX + ATR + channel break)；僅 mean-reversion 無 trend-following；degree 參數型別錯誤
+- **修復**: v2 版本
+  - timeframe 改為 15m
+  - DecimalParameter → IntParameter
+  - ATR filter 改為可選，加入 volume filter
+  - ADX 範圍放寬 (10-50)
+  - 啟用 mean-reversion + trend-following 雙模式
+  - startup_candle_count 從 300 降至 100
+- **策略檔**: `strategies/math_based/PolyReg_Adaptive_v2.py`
+- **診斷報告**: `user_data/reports/PolyReg_Adaptive_v1_diagnosis.md`
+- **狀態**: ⚠️ 待 backtest 驗證
+
 ---
 
 ## 待執行迭代
 
-- [ ] MathCombo_Adaptive_v1 - 調整參數重新優化
-- [ ] PolyReg_Adaptive_v1 - 調整參數重新優化
+- [x] MathCombo_Adaptive_v1 - ~~調整參數重新優化~~ → **已封存**
+- [ ] PolyReg_Adaptive_v2 - backtest 驗證
 - [ ] Adaptive_Scalp_v2 - 首次優化
 - [ ] 確認 NSGAII +12.65% 原始數據來源
