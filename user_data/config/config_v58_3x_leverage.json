@@ -1,0 +1,196 @@
+{
+  "trading_mode": "futures",
+  "margin_mode": "isolated",
+  "leverage": {
+    "long": 3,
+    "short": 3
+  },
+  "max_open_trades": 2,
+  "stake_currency": "USDT",
+  "stake_amount": 100,
+  "tradable_balance_ratio": 1,
+  "dry_run": true,
+  "timeframe": "15m",
+  "dry_run_wallet": 1000,
+  "cancel_open_orders_on_exit": true,
+  "unfilledtimeout": {
+    "entry": 10,
+    "exit": 10,
+    "exit_timeout_count": 0,
+    "unit": "minutes"
+  },
+  "entry_pricing": {
+    "price_side": "same",
+    "use_order_book": true,
+    "order_book_top": 1,
+    "price_last_balance": 0.0,
+    "check_depth_of_market": {
+      "enabled": false,
+      "bids_to_ask_delta": 1
+    }
+  },
+  "exit_pricing": {
+    "price_side": "same",
+    "use_order_book": true,
+    "order_book_top": 1,
+    "price_last_balance": 0.0,
+    "check_depth_of_market": {
+      "enabled": false,
+      "bids_to_ask_delta": 1
+    }
+  },
+  "exchange": {
+    "name": "bybit",
+    "key": "6A0fFBD90zJfcAFjkm7Flf7A1eTU3jUD32pAxlJC9uB23pR6N981jRTV8w2REIiE",
+    "secret": "***",
+    "ccxt_config": {
+      "enableRateLimit": true
+    },
+    "ccxt_async_config": {
+      "enableRateLimit": true,
+      "rateLimit": 50
+    },
+    "pair_whitelist": [
+      "BTC/USDT:USDT"
+    ],
+    "pair_blacklist": []
+  },
+  "pairlists": [
+    {
+      "method": "StaticPairList"
+    }
+  ],
+  "edge": {
+    "enabled": false,
+    "process_throttle_secs": 3600,
+    "calculate_since_number_of_days": 14,
+    "allowed_risk": 0.015,
+    "stoploss_range_min": -0.05,
+    "stoploss_range_max": -0.25,
+    "stoploss_range_step": -0.01,
+    "minimum_winrate": 0.7,
+    "minimum_expectancy": 0.025,
+    "min_trade_number": 10,
+    "max_trade_duration_minute": 240,
+    "remove_pumps": false
+  },
+  "freqai": {
+    "enabled": true,
+    "purge_old_models": 2,
+    "train_period_days": 30,
+    "backtest_period_days": 7,
+    "live_retrain_hours": 0,
+    "identifier": "freqai_v58_3x_btc_tighter_stoploss",
+    "save_backtest_models": true,
+    "continual_learning": false,
+    "feature_parameters": {
+      "include_timeframes": [
+        "15m",
+        "1h",
+        "4h"
+      ],
+      "include_corr_pairlist": [
+        "BTC/USDT:USDT",
+        "ETH/USDT:USDT",
+        "SOL/USDT:USDT",
+        "XRP/USDT:USDT",
+        "LTC/USDT:USDT"
+      ],
+      "label_period_candles": 24,
+      "include_shifted_candles": 3,
+      "DI_threshold": 0.85,
+      "weight_factor": 0.85,
+      "principal_component_analysis": false,
+      "use_SVM_to_remove_outliers": true,
+      "indicator_periods_candles": [
+        10,
+        20,
+        50
+      ],
+      "plot_feature_importances": 0
+    },
+    "data_split_parameters": {
+      "test_size": 0.25,
+      "shuffle": false
+    },
+    "model_training_parameters": {
+      "n_estimators": 800,
+      "learning_rate": 0.03,
+      "max_depth": 8,
+      "colsample_bytree": 0.9,
+      "subsample": 0.9,
+      "reg_alpha": 0.3,
+      "reg_lambda": 0.3,
+      "min_child_samples": 150,
+      "num_leaves": 40
+    },
+    "xgboost_params": {
+      "tree_method": "hist",
+      "device": "cuda"
+    },
+    "rl_config": {
+      "train_cycles": 20,
+      "add_state_info": true,
+      "max_trade_duration_candles": 144,
+      "max_training_drawdown_pct": 0.02,
+      "cpu_count": 2,
+      "model_type": "PPO",
+      "policy_type": "MlpPolicy",
+      "progress_bar": false,
+      "model_reward_parameters": {
+        "rr": 1,
+        "profit_aim": 0.025
+      }
+    }
+  },
+  "telegram": {
+    "enabled": true,
+    "token": "***",
+    "chat_id": "-545048568",
+    "notification_settings": {
+      "status": "silent",
+      "warning": "on",
+      "startup": "off",
+      "entry": "silent",
+      "entry_fill": "on",
+      "entry_cancel": "silent",
+      "exit": {
+        "roi": "silent",
+        "emergency_exit": "on",
+        "force_exit": "on",
+        "exit_signal": "silent",
+        "trailing_stop_loss": "on",
+        "stop_loss": "on",
+        "stoploss_on_exchange": "on",
+        "custom_exit": "silent",
+        "partial_exit": "on"
+      },
+      "exit_cancel": "on",
+      "exit_fill": "off",
+      "protection_trigger": "off",
+      "protection_trigger_global": "on",
+      "strategy_msg": "off",
+      "show_candle": "ohlc"
+    },
+    "reload": true,
+    "balance_dust_level": 0.01
+  },
+  "api_server": {
+    "enabled": true,
+    "listen_ip_address": "0.0.0.0",
+    "listen_port": 13994,
+    "verbosity": "error",
+    "jwt_secret_key": "dupx4657",
+    "CORS_origins": [
+      "http://www.hanuman.one:13991"
+    ],
+    "username": "carlos",
+    "password": "***"
+  },
+  "bot_name": "xiaohuangbot_v58_3x_tighter_stoploss",
+  "initial_state": "running",
+  "force_entry_enable": false,
+  "internals": {
+    "process_throttle_secs": 5
+  }
+}

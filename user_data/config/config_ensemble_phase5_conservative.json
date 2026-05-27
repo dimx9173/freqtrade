@@ -1,0 +1,226 @@
+{
+  "max_open_trades": 8,
+  "stake_currency": "USDT",
+  "stake_amount": 80,
+  "tradable_balance_ratio": 0.85,
+  "dry_run": true,
+  "dry_run_wallet": 1000,
+  "cancel_open_orders_on_exit": false,
+  "trading_mode": "futures",
+  "margin_mode": "isolated",
+
+  "entry_pricing": {
+    "price_side": "same",
+    "use_order_book": true,
+    "order_book_top": 1,
+    "price_last_balance": 0.0,
+    "check_depth_of_market": {
+      "enabled": true,
+      "bids_to_ask_delta": 1
+    }
+  },
+  "exit_pricing": {
+    "price_side": "same",
+    "use_order_book": true,
+    "order_book_top": 1
+  },
+
+  "dataformat_ohlcv": "feather",
+  "dataformat_trades": "feather",
+
+  "exchange": {
+    "name": "binance",
+    "key": "kfubX0XvGx4NG8N3eQbYKFKW1EbOFLwZyjGA9tFhFXYMOaPjCjsGc91AGsJxQIge",
+    "secret": "3HdqHJaaB3YASdh4YMGNChTyUiWx4KSLWFLAfvs8fYW8pkyQCV9x4RmBIizdG3RX",
+    "ccxt_config": {},
+    "ccxt_async_config": {},
+    "pair_whitelist": [
+      "BTC/USDT:USDT",
+      "ETH/USDT:USDT",
+      "BNB/USDT:USDT",
+      "SOL/USDT:USDT",
+      "ADA/USDT:USDT",
+      "XRP/USDT:USDT",
+      "MATIC/USDT:USDT",
+      "AVAX/USDT:USDT"
+    ],
+    "pair_blacklist": [],
+    "markets_refresh_interval": 60
+  },
+
+  "pairlists": [
+    {
+      "method": "StaticPairList",
+      "number_assets": 8
+    }
+  ],
+
+  "timeframe": "5m",
+
+  "telegram": {
+    "enabled": false,
+    "token": "",
+    "chat_id": ""
+  },
+
+  "api_server": {
+    "enabled": true,
+    "listen_ip_address": "0.0.0.0",
+    "listen_port": 14003,
+    "verbosity": "info",
+    "jwt_secret_key": "phase5-conservative-2025",
+    "CORS_origins": ["http://localhost:8080"],
+    "username": "",
+    "password": ""
+  },
+
+  "bot_name": "ensemble_phase5_conservative",
+  "initial_state": "running",
+  "force_entry_enable": false,
+
+  "internals": {
+    "process_throttle_secs": 1,
+    "allowed_trials": 5
+  },
+
+  "freqai": {
+    "enabled": true,
+    "identifier": "ensemble_phase5_conservative_v1",
+    "freqaimodel": "HybridEnsembleRegressor",
+    "train_period_days": 15,
+    "backtest_period_days": 2,
+
+    "data_split_parameters": {
+      "test_size": 0.2,
+      "shuffle": false,
+      "random_state": 42
+    },
+
+    "feature_parameters": {
+      "include_timeframes": ["5m", "15m"],
+      "include_corr_pairlist": [
+        "BTC/USDT:USDT",
+        "ETH/USDT:USDT",
+        "BNB/USDT:USDT"
+      ],
+      "include_shifted_candles": 2,
+      "label_period_candles": 2,
+      "indicator_periods_candles": [5, 8, 13, 21],
+      "DI_threshold": 0.7,
+      "principal_component_analysis": false,
+      "use_SVM_to_remove_outliers": true,
+      "weight_factor": 0.9,
+      "noise_standard_deviation": 0.0005,
+      "buffer_train_data_candles": 50
+    },
+
+    "model_training_parameters": {
+      "lightgbm": {
+        "n_estimators": 150,
+        "learning_rate": 0.08,
+        "max_depth": 5,
+        "min_child_samples": 15,
+        "subsample": 0.9,
+        "colsample_bytree": 0.9,
+        "reg_alpha": 0.2,
+        "reg_lambda": 0.2,
+        "random_state": 42,
+        "verbose": -1,
+        "n_jobs": -1
+      },
+      "xgboost": {
+        "n_estimators": 120,
+        "learning_rate": 0.1,
+        "max_depth": 4,
+        "min_child_weight": 5,
+        "subsample": 0.9,
+        "colsample_bytree": 0.9,
+        "reg_alpha": 0.1,
+        "reg_lambda": 0.1,
+        "random_state": 42,
+        "verbosity": 0,
+        "n_jobs": -1
+      },
+      "deep_learning": {
+        "sequence_length": 15,
+        "epochs": 80,
+        "batch_size": 32,
+        "learning_rate": 0.001,
+        "early_stopping_patience": 15,
+        "phase5b_enhanced": {
+          "use_attention": true,
+          "cnn_filters": [32, 64, 128],
+          "cnn_kernel_sizes": [3, 5],
+          "lstm_hidden_size": 96,
+          "lstm_num_layers": 2,
+          "dropout": 0.2,
+          "use_bidirectional": true
+        }
+      },
+      "meta_model": {
+        "n_estimators": 80,
+        "learning_rate": 0.12,
+        "max_depth": 3,
+        "random_state": 42,
+        "verbose": -1
+      },
+      "phase5c_meta_intelligence": {
+        "num_base_models": 4,
+        "meta_hidden_size": 96,
+        "reliability_threshold": 0.8,
+        "confidence_threshold": 0.85,
+        "performance_window": 150,
+        "learning_rate": 0.0008
+      },
+      "phase5d_online_learning": {
+        "learning_rate": 0.008,
+        "adaptation_window": 80,
+        "retraining_threshold": 0.08,
+        "drift_threshold": 0.08,
+        "warning_threshold": 0.05,
+        "retrain_cooldown": 150,
+        "max_retrains_per_hour": 2,
+        "buffer_size_multiplier": 2.5
+      }
+    },
+
+    "extra_returns_per_train": {
+      "&-ensemble_prediction_mean": 0.0,
+      "&-ensemble_prediction_std": 0.0,
+      "&-price_target_mean": 0.0,
+      "&-price_target_std": 0.0,
+      "&-volatility_target_mean": 0.0,
+      "&-volatility_target_std": 0.0,
+      "&-trend_target_mean": 0.0,
+      "&-trend_target_std": 0.0,
+      "&-volume_target_mean": 0.0,
+      "&-volume_target_std": 0.0,
+      "ensemble_confidence_mean": 0.0,
+      "model_consensus_mean": 0.0,
+      "phase5b_cnn_lstm_weight": 0.0,
+      "phase5b_transformer_weight": 0.0,
+      "phase5b_tft_weight": 0.0,
+      "phase5b_wavenet_weight": 0.0,
+      "phase5c_meta_reliability": 0.0,
+      "phase5c_adaptive_confidence": 0.0,
+      "phase5d_online_learning_active": 0.0,
+      "phase5d_concept_drift_detected": 0.0,
+      "phase5d_retraining_frequency": 0.0
+    },
+
+    "multitarget_parallel_training": true,
+    "purge_old_models": 5,
+    "save_backtest_models": true,
+    "follow_mode": false,
+    "continual_learning": false,
+    "write_metrics_to_disk": true,
+
+    "rl_config": {
+      "return_reward_reduction": false
+    }
+  },
+
+  "edge": {
+    "enabled": false
+  }
+}

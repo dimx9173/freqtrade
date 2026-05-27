@@ -1,0 +1,79 @@
+{
+  "trading_mode": "spot",
+  "margin_mode": "",
+  "max_open_trades": 2,
+  "stake_currency": "USDT",
+  "stake_amount": 200,
+  "tradable_balance_ratio": 0.99,
+  "fiat_display_currency": "USD",
+  "timeframe": "5m",
+  "dry_run": true,
+  "cancel_open_orders_on_exit": false,
+  "process_only_new_candles": true,
+  "minimal_roi": {
+    "0": 0.04,
+    "45": 0.025,
+    "90": 0.01,
+    "180": 0.005,
+    "300": 0
+  },
+  "stoploss": -0.025,
+  "trailing_stop": true,
+  "trailing_stop_positive": 0.04,
+  "trailing_stop_positive_offset": 0.05,
+  "trailing_only_offset_is_reached": true,
+  "unfilledtimeout": {
+    "entry": 1,
+    "exit": 1,
+    "exit_timeout_count": 0,
+    "unit": "minutes"
+  },
+  "entry_pricing": {
+    "price_side": "same",
+    "use_order_book": true,
+    "order_book_top": 1,
+    "price_last_balance": 0.0,
+    "check_depth_of_market": {
+      "enabled": false,
+      "bids_to_ask_delta": 1
+    }
+  },
+  "exit_pricing": {
+    "price_side": "same",
+    "use_order_book": true,
+    "order_book_top": 1
+  },
+  "exchange": {
+    "name": "binance",
+    "key": "",
+    "secret": "",
+    "ccxt_config": {
+      "options": {
+        "defaultType": "spot",
+        "adjustForTimeDifference": true,
+        "recvWindow": 60000
+      },
+      "enableRateLimit": true,
+      "fee": 0.0011
+    },
+    "ccxt_async_config": {
+      "enableRateLimit": true,
+      "rateLimit": 50
+    },
+    "pair_whitelist": [
+      "BTC/USDT",
+      "ETH/USDT",
+      "BNB/USDT"
+    ],
+    "pair_blacklist": []
+  },
+  "pairlists": [
+    {
+      "method": "StaticPairList"
+    }
+  ],
+  "dataformat_ohlcv": "feather",
+  "internals": {
+    "process_throttle_secs": 5
+  }
+}

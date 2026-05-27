@@ -1,0 +1,431 @@
+{
+  "enterprise_monitoring": {
+    "enabled": true,
+    "monitoring_interval_seconds": 60,
+    "health_check_interval_minutes": 10,
+    "metrics_retention_hours": 72,
+    "log_level": "INFO",
+
+    "alert_manager": {
+      "email": {
+        "enabled": false,
+        "smtp_server": "smtp.gmail.com",
+        "smtp_port": 587,
+        "use_tls": true,
+        "from_email": "freqai-alerts@your-domain.com",
+        "to_email": "admin@your-domain.com",
+        "username": "",
+        "password": "",
+        "subject_prefix": "[FreqAI Enterprise]"
+      },
+
+      "slack": {
+        "enabled": true,
+        "webhook_url": "https://hooks.slack.com/services/YOUR/SLACK/WEBHOOK",
+        "channel": "#freqai-alerts",
+        "username": "FreqAI Bot",
+        "icon_emoji": ":robot_face:"
+      },
+
+      "webhook": {
+        "enabled": false,
+        "url": "https://your-monitoring-system.com/webhook",
+        "headers": {
+          "Content-Type": "application/json",
+          "Authorization": "Bearer YOUR_API_TOKEN"
+        },
+        "timeout": 10,
+        "retry_count": 3
+      },
+
+      "file": {
+        "enabled": true,
+        "log_file": "user_data/logs/enterprise_alerts.log",
+        "max_file_size_mb": 100,
+        "backup_count": 5,
+        "log_format": "json"
+      }
+    },
+
+    "alert_rules": {
+      "critical_rules": {
+        "daily_drawdown_critical": {
+          "enabled": true,
+          "threshold": 0.15,
+          "cooldown_minutes": 30,
+          "channels": ["email", "slack", "webhook", "file"]
+        },
+        "system_memory_critical": {
+          "enabled": true,
+          "threshold": 95.0,
+          "cooldown_minutes": 10,
+          "channels": ["email", "slack", "file"]
+        },
+        "model_prediction_failure": {
+          "enabled": true,
+          "threshold": 0.8,
+          "cooldown_minutes": 15,
+          "channels": ["email", "slack", "webhook", "file"]
+        },
+        "emergency_stop_triggered": {
+          "enabled": true,
+          "threshold": true,
+          "cooldown_minutes": 5,
+          "channels": ["email", "slack", "webhook", "file"]
+        }
+      },
+
+      "high_priority_rules": {
+        "hourly_loss_limit": {
+          "enabled": true,
+          "threshold": 0.08,
+          "cooldown_minutes": 60,
+          "channels": ["slack", "webhook", "file"]
+        },
+        "concept_drift_detected": {
+          "enabled": true,
+          "threshold": true,
+          "cooldown_minutes": 120,
+          "channels": ["slack", "file"]
+        },
+        "model_consensus_low": {
+          "enabled": true,
+          "threshold": 0.6,
+          "cooldown_minutes": 30,
+          "channels": ["slack", "file"]
+        },
+        "prediction_latency_high": {
+          "enabled": true,
+          "threshold": 1500.0,
+          "cooldown_minutes": 15,
+          "channels": ["slack", "file"]
+        },
+        "open_positions_limit": {
+          "enabled": true,
+          "threshold": 18,
+          "cooldown_minutes": 30,
+          "channels": ["slack", "file"]
+        }
+      },
+
+      "medium_priority_rules": {
+        "cpu_usage_high": {
+          "enabled": true,
+          "threshold": 85.0,
+          "cooldown_minutes": 30,
+          "channels": ["file"]
+        },
+        "disk_space_low": {
+          "enabled": true,
+          "threshold": 5.0,
+          "cooldown_minutes": 60,
+          "channels": ["slack", "file"]
+        },
+        "win_rate_declining": {
+          "enabled": true,
+          "threshold": 0.35,
+          "cooldown_minutes": 120,
+          "channels": ["file"]
+        },
+        "model_retraining_frequent": {
+          "enabled": true,
+          "threshold": 6.0,
+          "cooldown_minutes": 60,
+          "channels": ["file"]
+        }
+      }
+    },
+
+    "health_checks": {
+      "system_resources": {
+        "enabled": true,
+        "cpu_warning_threshold": 80.0,
+        "cpu_critical_threshold": 95.0,
+        "memory_warning_threshold": 85.0,
+        "memory_critical_threshold": 95.0
+      },
+
+      "disk_space": {
+        "enabled": true,
+        "free_space_warning_gb": 10.0,
+        "free_space_critical_gb": 2.0,
+        "check_paths": ["/", "/tmp", "user_data"]
+      },
+
+      "freqtrade_process": {
+        "enabled": true,
+        "expected_processes": ["freqtrade"],
+        "check_port": 14002
+      },
+
+      "model_status": {
+        "enabled": true,
+        "max_model_age_hours": 48,
+        "min_prediction_confidence": 0.3
+      },
+
+      "prediction_pipeline": {
+        "enabled": true,
+        "max_latency_ms": 1000,
+        "test_prediction_interval_minutes": 30
+      }
+    },
+
+    "metrics_collection": {
+      "trading_metrics": {
+        "enabled": true,
+        "collection_interval_seconds": 60,
+        "metrics": [
+          "current_pnl",
+          "daily_pnl",
+          "daily_drawdown",
+          "win_rate_24h",
+          "sharpe_ratio_rolling",
+          "open_positions",
+          "total_trades_today",
+          "avg_trade_duration",
+          "model_confidence_avg",
+          "kelly_multiplier_avg",
+          "prediction_accuracy_24h"
+        ]
+      },
+
+      "system_metrics": {
+        "enabled": true,
+        "collection_interval_seconds": 30,
+        "metrics": [
+          "cpu_usage",
+          "memory_usage",
+          "memory_available_gb",
+          "disk_usage",
+          "disk_free_gb",
+          "load_average",
+          "process_count",
+          "network_io",
+          "prediction_latency_ms",
+          "model_memory_usage_mb"
+        ]
+      },
+
+      "model_performance_metrics": {
+        "enabled": true,
+        "collection_interval_seconds": 120,
+        "metrics": [
+          "ensemble_models_count",
+          "active_models",
+          "model_weights",
+          "concept_drift_status",
+          "retraining_frequency",
+          "model_age_hours",
+          "prediction_confidence_distribution",
+          "model_consensus_score",
+          "online_learning_buffer_size",
+          "feature_importance_top10"
+        ]
+      }
+    }
+  },
+
+  "data_governance": {
+    "enabled": true,
+    "database_path": "user_data/governance/governance.db",
+    "data_quality_check_interval_minutes": 30,
+    "compliance_check_interval_hours": 6,
+    "audit_retention_days": 2555,
+
+    "data_quality": {
+      "enabled": true,
+      "quality_rules": {
+        "completeness": {
+          "missing_threshold": 0.05,
+          "weight": 1.0
+        },
+        "accuracy": {
+          "outlier_threshold": 0.15,
+          "weight": 1.0
+        },
+        "consistency": {
+          "variance_threshold": 0.25,
+          "weight": 0.8
+        },
+        "timeliness": {
+          "freshness_hours": 24,
+          "weight": 0.9
+        },
+        "validity": {
+          "format_compliance": 0.95,
+          "weight": 1.0
+        },
+        "uniqueness": {
+          "duplicate_threshold": 0.05,
+          "weight": 0.7
+        }
+      },
+
+      "quality_thresholds": {
+        "excellent": 0.95,
+        "good": 0.85,
+        "acceptable": 0.70,
+        "poor": 0.50
+      }
+    },
+
+    "compliance": {
+      "enabled": true,
+      "compliance_rules": {
+        "data_retention": {
+          "enabled": true,
+          "max_retention_days": 2555,
+          "min_retention_days": 365,
+          "auto_cleanup": true
+        },
+        "audit_completeness": {
+          "enabled": true,
+          "required_coverage": 0.95,
+          "critical_operations": [
+            "TRADING_DECISION",
+            "MODEL_RETRAINING",
+            "RISK_MANAGEMENT",
+            "DATA_ACCESS"
+          ]
+        },
+        "data_quality": {
+          "enabled": true,
+          "min_quality_score": 0.80,
+          "enforce_quality_gates": true
+        },
+        "access_control": {
+          "enabled": true,
+          "require_authentication": true,
+          "require_authorization": true,
+          "session_timeout_minutes": 480
+        },
+        "privacy_protection": {
+          "enabled": true,
+          "data_anonymization": true,
+          "encryption_required": true,
+          "sensitive_data_masking": true
+        },
+        "risk_management": {
+          "enabled": true,
+          "max_daily_loss": 0.10,
+          "position_size_limit": 0.25,
+          "max_leverage": 25.0,
+          "emergency_stop_loss": 0.20
+        }
+      }
+    },
+
+    "data_lineage": {
+      "enabled": true,
+      "auto_tracking": true,
+      "track_transformations": true,
+      "lineage_depth": 5,
+      "cleanup_old_lineage_days": 365
+    },
+
+    "audit_trail": {
+      "enabled": true,
+      "log_all_operations": true,
+      "encrypt_audit_logs": true,
+      "audit_log_rotation": {
+        "max_file_size_mb": 500,
+        "backup_count": 10,
+        "compression": true
+      },
+      "critical_operations": [
+        "TRADING_DECISION",
+        "MODEL_RETRAINING",
+        "SYSTEM_CONFIGURATION_CHANGE",
+        "RISK_THRESHOLD_MODIFICATION",
+        "EMERGENCY_STOP",
+        "DATA_EXPORT",
+        "MODEL_DEPLOYMENT"
+      ]
+    }
+  },
+
+  "integration": {
+    "freqtrade_integration": {
+      "enabled": true,
+      "api_endpoint": "http://localhost:14002",
+      "api_username": "",
+      "api_password": "",
+      "polling_interval_seconds": 30
+    },
+
+    "model_integration": {
+      "enabled": true,
+      "model_path": "user_data/freqaimodels/HybridEnsembleRegressor.py",
+      "monitor_model_performance": true,
+      "auto_alert_on_drift": true
+    },
+
+    "external_monitoring": {
+      "enabled": false,
+      "prometheus_endpoint": "http://localhost:9090",
+      "grafana_dashboard": "http://localhost:3000",
+      "custom_webhooks": []
+    }
+  },
+
+  "security": {
+    "encryption": {
+      "enabled": true,
+      "algorithm": "AES-256",
+      "key_rotation_days": 90
+    },
+
+    "access_logging": {
+      "enabled": true,
+      "log_all_access": true,
+      "include_ip_address": true,
+      "include_user_agent": true
+    },
+
+    "rate_limiting": {
+      "enabled": true,
+      "max_requests_per_minute": 1000,
+      "burst_allowance": 100
+    }
+  },
+
+  "performance": {
+    "optimization": {
+      "enabled": true,
+      "cache_metrics": true,
+      "cache_ttl_seconds": 30,
+      "batch_operations": true,
+      "async_processing": true
+    },
+
+    "resource_limits": {
+      "max_memory_mb": 2048,
+      "max_cpu_percent": 50,
+      "max_concurrent_operations": 10
+    }
+  },
+
+  "logging": {
+    "level": "INFO",
+    "format": "%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+    "file_logging": {
+      "enabled": true,
+      "log_file": "user_data/logs/enterprise_monitoring.log",
+      "max_file_size_mb": 100,
+      "backup_count": 5,
+      "rotation": "daily"
+    },
+
+    "console_logging": {
+      "enabled": true,
+      "colored_output": true
+    },
+
+    "structured_logging": {
+      "enabled": true,
+      "format": "json",
+      "include_metadata": true
+    }
+  }
+}

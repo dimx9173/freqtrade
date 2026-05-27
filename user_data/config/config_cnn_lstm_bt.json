@@ -1,0 +1,172 @@
+{
+  "trading_mode": "futures",
+  "margin_mode": "isolated",
+  "max_open_trades": 5,
+  "stake_currency": "USDT",
+  "timeframe": "5m",
+  "stake_amount": 100,
+  "tradable_balance_ratio": 0.99,
+  "dry_run": true,
+  "freqaimodel": "PyTorchCNNLSTMRegressor",
+  "dataformat_ohlcv": "json",
+  "dataformat_trades": "jsongz",
+  "cancel_open_orders_on_exit": false,
+  "dry_run_wallet": 1000,
+
+  "unfilledtimeout": {
+        "entry": 10,
+        "exit": 10,
+        "exit_timeout_count": 0,
+        "unit": "minutes"
+  },
+  "order_types": {
+      "entry": "market",
+      "exit": "market",
+      "emergency_exit": "market",
+      "force_entry": "market",
+      "force_exit": "market",
+      "stoploss": "market",
+      "stoploss_on_exchange": false,
+      "stoploss_on_exchange_interval": 60
+  },
+  "entry_pricing": {
+      "price_side": "other",
+      "use_order_book": true,
+      "order_book_top": 1,
+      "price_last_balance": 0.0,
+      "check_depth_of_market": {
+          "enabled": false,
+          "bids_to_ask_delta": 1
+      }
+  },
+  "exit_pricing":{
+      "price_side": "other",
+      "use_order_book": true,
+      "order_book_top": 1
+  },
+  "exchange": {
+    "name": "bybit",
+    "sandbox": false,
+    "key": "",
+    "secret": "",
+    "ccxt_config": {
+      "enableRateLimit": true,
+      "rateLimit": 50
+    },
+    "ccxt_async_config": {
+      "enableRateLimit": true,
+      "rateLimit": 50
+    },
+    "pair_whitelist": [
+      "BTC/USDT:USDT",
+      "ETH/USDT:USDT"
+    ],
+    "pair_blacklist": []
+  },
+  "pairlists": [
+    {
+      "method": "StaticPairList"
+    }
+  ],
+  "freqai": {
+    "enabled": true,
+    "identifier": "cnn-lstm-bt",  // 更具體的識別名稱
+    "train_period_days": 120,  // 縮短訓練數據範圍，更關注近期數據
+    "fit_live_predictions_candles": 24,  // 使用更少的蠟燭圖數據來擬合預測
+    "backtest_period_days": 30,  // 縮短回測範圍，更頻繁地驗證模型
+    "expiration_hours": 2,  // 縮短模型有效期限，更快適應市場變化
+    "live_retrain_hours": 2,  // 更頻繁地重新訓練模型
+    "purge_old_models": 2,  // 保留最近 2 個模型，方便回滾
+    "save_backtest_models": true,
+    "write_metrics_to_disk": true,
+    "activate_tensorboard": false,
+    "feature_parameters": {
+      "include_corr_pairlist": [
+        "BTC/USDT:USDT"  // 只保留與 BTC 的相關性
+      ],
+      "include_timeframes": [
+        "15m", "30m", "1h"  // 縮減時間範圍，更關注短期趨勢
+      ],
+      "label_period_candles": 6,  // 縮短預測範圍，提高準確性
+      "include_shifted_candidates": 6,  // 減少平移後的候選特徵
+      "DI_threshold": 15,  // 提高方向指標閾值，過濾掉震盪行情
+      "weight_factor": 0.7,  // 增加近期數據的權重
+      "indicator_periods_candles": [
+        14, 21, 35, 56, 84 // 縮短指標計算的時間範圍
+      ],
+      "noise_standard_deviation": 0.005,  // 降低噪聲標準差
+      "buffer_train_data_candles": 10  // 減少緩衝區大小
+    },
+    "data_split_parameters": {
+      "test_size": 0.2,  // 減少測試數據比例，增加訓練數據
+      "random_state": 42,
+      "shuffle": false
+    },
+    "model_training_parameters": {
+      "learning_rate": 1e-3,  // 降低學習率，提高模型穩定性
+      "trainer_kwargs": {
+        "n_steps": null, //使用 n_epochs 來控制訓練時長
+        "batch_size": 32,  // 減小批次大小，提高訓練效率
+        "n_epochs": 32  // 增加訓練輪數
+      },
+      "model_kwargs": {
+        "lstm_layers": 4,  // 減少 LSTM 層數，簡化模型
+        "hidden_dim": 128,  // 減少隱藏層大小
+        "window_size": 8,  // 縮小滑動窗口大小
+        "dropout_percent": 0.3,  // 降低 Dropout 比例
+        "activation_fn": "ReLU",
+        "cnn_channels": [64, 128, 256],  // 減少 CNN 通道數
+        "kernel_sizes": [3, 5, 7]  // 縮小 CNN 卷積核大小
+      }
+    }
+  },
+  //telegram and api
+    "telegram": {
+        "enabled": true,
+        "token": "6895128684:AAEkl-t1moJW1vJVp2dWTomR2uBSKDdqdqQ",//3
+        "chat_id": "-545048568",
+        "notification_settings": {
+        "status": "silent",
+        "warning": "on",
+        "startup": "off",
+        "entry": "silent",
+        "entry_fill": "on",
+        "entry_cancel": "silent",
+        "exit": {
+            "roi": "silent",
+            "emergency_exit": "on",
+            "force_exit": "on",
+            "exit_signal": "silent",
+            "trailing_stop_loss": "on",
+            "stop_loss": "on",
+            "stoploss_on_exchange": "on",
+            "custom_exit": "silent",
+            "partial_exit": "on"
+        },
+        "exit_cancel": "on",
+        "exit_fill": "off",
+        "protection_trigger": "off",
+        "protection_trigger_global": "on",
+        "strategy_msg": "off",
+        "show_candle": "ohlc"
+    },
+    "reload": true,
+    "balance_dust_level": 0.01
+    },
+    "api_server": {
+        "enabled": true,
+        "listen_ip_address": "0.0.0.0",
+        "listen_port": 13993,
+        "verbosity": "info",
+        "jwt_secret_key": "dupx4657",
+        "CORS_origins": ["http://www.hanuman.one:13991"],
+        "username": "carlos",
+        "password": "dupx4657"
+    },
+    "bot_name": "xiaohuangbot",
+    "initial_state": "running",
+    "force_entry_enable": false,
+    "internals": {
+        "process_throttle_secs": 5
+    }
+}

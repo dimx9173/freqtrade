@@ -1,0 +1,200 @@
+{
+    "max_open_trades": 4,
+    "stake_currency": "USDT",
+    "stake_amount": 250,
+    "tradable_balance_ratio": 0.99,
+    //"fiat_display_currency": "USD",
+    "dry_run": true,
+    "dry_run_wallet": 1000,
+
+    "cancel_open_orders_on_exit": false,
+    "trading_mode": "futures",
+    "margin_mode": "isolated",
+    "unfilledtimeout": {
+        "entry": 10,
+        "exit": 10,
+        "exit_timeout_count": 0,
+        "unit": "minutes"
+    },
+    "entry_pricing": {
+        "price_side": "other",
+        "use_order_book": true,
+        "order_book_top": 1,
+        "price_last_balance": 0.0,
+        "check_depth_of_market": {
+            "enabled": false,
+            "bids_to_ask_delta": 1
+        }
+    },
+    "exit_pricing":{
+        "price_side": "other",
+        "use_order_book": true,
+        "order_book_top": 1
+    },
+
+    "exchange": {
+        "name": "binance",
+        "key": "",
+        "secret": "",
+        "ccxt_config": {
+            "enableRateLimit": true
+        },
+        "ccxt_async_config": {
+            "enableRateLimit": true,
+            "rateLimit": 50
+        },
+        "pair_whitelist":
+        [
+            "STRK/USDT:USDT",
+            "WOO/USDT:USDT",
+            "PORTAL/USDT:USDT",
+            "SUSHI/USDT:USDT",
+            "ARB/USDT:USDT",
+            "GTC/USDT:USDT",
+            "GMX/USDT:USDT",
+            "HFT/USDT:USDT",
+            "CRV/USDT:USDT",
+            "PERP/USDT:USDT",
+            "BADGER/USDT:USDT",
+            "THETA/USDT:USDT",
+            "PIXEL/USDT:USDT",
+            "ETH/USDT:USDT",
+            "CYBER/USDT:USDT",
+            "IMX/USDT:USDT",
+            "NTRN/USDT:USDT",
+            "FET/USDT:USDT",
+            "MASK/USDT:USDT",
+            "GAS/USDT:USDT",
+            "TIA/USDT:USDT",
+            "ATOM/USDT:USDT",
+            "NFP/USDT:USDT",
+            "KSM/USDT:USDT",
+            "GMT/USDT:USDT",
+            "WAXP/USDT:USDT",
+            "AUCTION/USDT:USDT",
+            "ARK/USDT:USDT",
+            "BNX/USDT:USDT",
+            "LINK/USDT:USDT",
+            "DODOX/USDT:USDT",
+            "PHB/USDT:USDT",
+            "DYDX/USDT:USDT",
+            "HBAR/USDT:USDT",
+            "DOGS/USDT:USDT",
+            "DENT/USDT:USDT",
+            "ID/USDT:USDT",
+            "BAT/USDT:USDT",
+            "ATA/USDT:USDT",
+            "SAND/USDT:USDT",
+            "BLZ/USDT:USDT",
+            "EDU/USDT:USDT",
+            "STG/USDT:USDT",
+            "T/USDT:USDT",
+            "NOT/USDT:USDT",
+            "RDNT/USDT:USDT",
+            "ARPA/USDT:USDT",
+            "MTL/USDT:USDT",
+            "NEIROETH/USDT:USDT",
+            "IOTA/USDT:USDT",
+            "BTC/USDT:USDT",
+            "SXP/USDT:USDT",
+            "HIGH/USDT:USDT",
+            "HOOK/USDT:USDT",
+            "LINA/USDT:USDT",
+            "EGLD/USDT:USDT",
+            "1000RATS/USDT:USDT",
+            "SPELL/USDT:USDT",
+            "ALPACA/USDT:USDT",
+            "KAVA/USDT:USDT",
+            "BEL/USDT:USDT",
+            "APE/USDT:USDT",
+            "CAKE/USDT:USDT"
+        ]
+
+        ,
+        "pair_blacklist": [
+            "BNB/.*",
+            "(BTC/USDT:USDT_.*|ETH/USDT:USDT_.*)",
+            "(GT|HT)/.*",
+            "(WBTC|BSV|BTCDOM|DEFI)/.*",
+            ".*(_PREMIUM|BEAR|BULL|DOWN|HALF|HEDGE|UP|[1235][SL])/.*",
+            "(AUD|BRZ|CAD|CHF|EUR|GBP|HKD|IDRT|JPY|NGN|RUB|SGD|TRY|UAH|USD|ZAR|UST)/.*",
+            "(BUSD|C/USDT:USDT|DAI|PAX|PAXG|SUSD|TUSD|USDC|/USDT:USDT|VAI|USDN)/.*",
+            "(ACM|AFA|ALA|ALL|APL|ASR|ATM|BAR|CAI|CITY|FOR|GOZ|IBFK|LEG|LOCK-1|NAVI|NMR|NOV|OG|PFL|PSG|ROUSH|STV|TH|TRA|UCH|UFC|YBO)/.*"
+        ]
+    },
+    "pairlists": [
+
+        {
+            "method": "StaticPairList",
+            "number_assets": 100,
+            "sort_key": "quoteVolume",
+            "min_value": 0,
+            "refresh_period": 1800
+        },
+        {
+        "method": "ShuffleFilter"
+        }
+    ],
+    "edge": {
+        "enabled": false,
+        "process_throttle_secs": 3600,
+        "calculate_since_number_of_days": 14,
+        "allowed_risk": 0.015,
+        "stoploss_range_min": -0.05,
+        "stoploss_range_max": -0.25,
+        "stoploss_range_step": -0.01,
+        "minimum_winrate": 0.70,
+        "minimum_expectancy": 0.025,
+        "min_trade_number": 10,
+        "max_trade_duration_minute": 240,
+        "remove_pumps": false
+    },
+    "telegram": {
+        "enabled": true,
+        "token": "7799827257:AAHp9QG2QCxMuAWXI0L2v7xFwbvKR8Vac3o",//10
+        "chat_id": "-545048568",
+        "notification_settings": {
+            "status": "silent",
+            "warning": "on",
+            "startup": "off",
+            "entry": "silent",
+            "entry_fill": "on",
+            "entry_cancel": "silent",
+            "exit": {
+                "roi": "silent",
+                "emergency_exit": "on",
+                "force_exit": "on",
+                "exit_signal": "silent",
+                "trailing_stop_loss": "on",
+                "stop_loss": "on",
+                "stoploss_on_exchange": "on",
+                "custom_exit": "silent",
+                "partial_exit": "on"
+            },
+            "exit_cancel": "on",
+            "exit_fill": "off",
+            "protection_trigger": "off",
+            "protection_trigger_global": "on",
+            "strategy_msg": "off",
+            "show_candle": "ohlc"
+        },
+    "reload": true,
+    "balance_dust_level": 0.01
+    },
+    "api_server": {
+        "enabled": true,
+        "listen_ip_address": "0.0.0.0",
+        "listen_port": 13990,
+        "verbosity": "info",
+        "jwt_secret_key": "dupx4657",
+        "CORS_origins": ["http://www.hanuman.one:13991"],
+        "username": "carlos",
+        "password": "dupx4657"
+    },
+    "bot_name": "BhavaTenBot",
+    "initial_state": "running",
+    "force_entry_enable": false,
+    "internals": {
+        "process_throttle_secs": 5
+    }
+}

@@ -1,0 +1,59 @@
+{
+  "max_open_trades": 3,
+  "stake_amount": 50,
+  "dry_run_wallet": 10000,
+  "stake_currency": "USDT",
+  "fiat_display_currency": "USD",
+  "trading_mode": "futures",
+  "margin_mode": "isolated",
+  "timeframe": "5m",
+  "cancel_open_orders_on_exit": false,
+  "unfilledtimeout": {
+    "entry": 10,
+    "exit": 10,
+    "exit_timeout_count": 0,
+    "unit": "minutes"
+  },
+  "entry_pricing": {
+    "price_side": "same",
+    "use_order_book": true,
+    "order_book_top": 1
+  },
+  "exit_pricing": {
+    "price_side": "same",
+    "use_order_book": true,
+    "order_book_top": 1
+  },
+  "exchange": {
+    "name": "bybit",
+    "key": "",
+    "secret": "",
+    "ccxt_config": {
+      "options": {
+        "defaultType": "swap",
+        "defaultSettle": "USDT"
+      }
+    },
+    "ccxt_async_config": {},
+    "pair_whitelist": [
+      "BTC/USDT:USDT",
+      "ETH/USDT:USDT",
+      "SOL/USDT:USDT",
+      "XRP/USDT:USDT",
+      "BNB/USDT:USDT"
+    ]
+  },
+  "pairlists": [
+    {
+      "method": "StaticPairList"
+    }
+  ],
+  "leverage": {
+    "BTC/USDT:USDT": 3,
+    "ETH/USDT:USDT": 5,
+    "SOL/USDT:USDT": 3,
+    "XRP/USDT:USDT": 3,
+    "BNB/USDT:USDT": 3
+  },
+  "dataformat_ohlcv": "feather"
+}

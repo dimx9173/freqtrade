@@ -1,0 +1,184 @@
+{
+  "max_open_trades": 3,
+  "stake_currency": "USDT",
+  "stake_amount": 100,
+  "tradable_balance_ratio": 0.95,
+  "dry_run": true,
+  "dry_run_wallet": 1000,
+  "cancel_open_orders_on_exit": false,
+  "trading_mode": "futures",
+  "margin_mode": "isolated",
+
+  "entry_pricing": {
+    "price_side": "same",
+    "use_order_book": true,
+    "order_book_top": 1,
+    "price_last_balance": 0.0,
+    "check_depth_of_market": {
+      "enabled": false
+    }
+  },
+  "exit_pricing": {
+    "price_side": "same",
+    "use_order_book": true,
+    "order_book_top": 1
+  },
+
+  "dataformat_ohlcv": "feather",
+  "dataformat_trades": "feather",
+
+  "exchange": {
+    "name": "binance",
+    "key": "kfubX0XvGx4NG8N3eQbYKFKW1EbOFLwZyjGA9tFhFXYMOaPjCjsGc91AGsJxQIge",
+    "secret": "3HdqHJaaB3YASdh4YMGNChTyUiWx4KSLWFLAfvs8fYW8pkyQCV9x4RmBIizdG3RX",
+    "ccxt_config": {},
+    "ccxt_async_config": {},
+    "pair_whitelist": [
+      "ETH/USDT:USDT"
+    ],
+    "pair_blacklist": [],
+    "markets_refresh_interval": 60
+  },
+
+  "pairlists": [
+    {
+      "method": "StaticPairList",
+      "number_assets": 1
+    }
+  ],
+
+  "timeframe": "15m",
+
+  "telegram": {
+    "enabled": false,
+    "token": "",
+    "chat_id": ""
+  },
+
+  "api_server": {
+    "enabled": true,
+    "listen_ip_address": "0.0.0.0",
+    "listen_port": 14007,
+    "verbosity": "info",
+    "jwt_secret_key": "change-me-three-target-system",
+    "CORS_origins": ["http://localhost:8080"],
+    "username": "",
+    "password": ""
+  },
+
+  "bot_name": "three_target_voting_bot",
+  "initial_state": "running",
+  "force_entry_enable": false,
+
+  "internals": {
+    "process_throttle_secs": 1,
+    "allowed_trials": 5
+  },
+
+  "freqai": {
+    "enabled": true,
+    "identifier": "three_target_voting_15m_enhanced",
+    "freqaimodel": "HybridEnsembleClassifier",
+    "train_period_days": 35,
+    "backtest_period_days": 5,
+    "purge_old_models": 12,
+
+    "data_split_parameters": {
+      "test_size": 0.20,
+      "shuffle": false,
+      "random_state": 42
+    },
+
+    "feature_parameters": {
+      "include_timeframes": ["15m"],
+      "include_corr_pairlist": [
+        "ETH/USDT:USDT"
+      ],
+      "include_shifted_candles": 3,
+      "label_period_candles": 28,
+      "indicator_periods_candles": [8, 15, 26, 38],
+      "DI_threshold": 0.35,
+      "principal_component_analysis": false,
+      "use_SVM_to_remove_outliers": true,
+      "weight_factor": 0.90,
+      "noise_standard_deviation": 0.0008,
+      "buffer_train_data_candles": 350
+    },
+
+    "model_training_parameters": {
+      "lightgbm": {
+        "n_estimators": 550,
+        "learning_rate": 0.048,
+        "max_depth": 9,
+        "min_child_samples": 12,
+        "subsample": 0.85,
+        "colsample_bytree": 0.78,
+        "reg_alpha": 0.06,
+        "reg_lambda": 0.12,
+        "num_leaves": 95,
+        "min_split_gain": 0.0003,
+        "random_state": 42,
+        "verbose": -1,
+        "n_jobs": -1,
+        "feature_fraction": 0.8,
+        "bagging_fraction": 0.85,
+        "bagging_freq": 5
+      },
+      "xgboost": {
+        "n_estimators": 480,
+        "learning_rate": 0.055,
+        "max_depth": 9,
+        "min_child_weight": 0.8,
+        "subsample": 0.82,
+        "colsample_bytree": 0.78,
+        "reg_alpha": 0.05,
+        "reg_lambda": 0.09,
+        "gamma": 0.08,
+        "random_state": 42,
+        "verbosity": 0,
+        "n_jobs": -1,
+        "colsample_bylevel": 0.8,
+        "colsample_bynode": 0.8
+      },
+      "deep_learning": {
+        "sequence_length": 20,
+        "epochs": 120,
+        "batch_size": 48,
+        "learning_rate": 0.0008,
+        "lstm_hidden_size": 160,
+        "dropout": 0.25,
+        "d_model": 160,
+        "early_stopping_patience": 12,
+        "weight_decay": 0.01,
+        "gradient_clip": 1.0
+      }
+    },
+
+    "extra_returns_per_train": {
+      "momentum_confidence": 0.40,
+      "trend_confidence": 0.42,
+      "volatility_confidence": 0.36,
+      "triple_consensus": 0.46,
+      "funding_sentiment": 0.48,
+      "liquidity_quality": 0.42
+    },
+
+    "multitarget_parallel_training": true,
+    "save_backtest_models": true,
+    "follow_mode": false,
+    "continual_learning": true,
+    "write_metrics_to_disk": true,
+
+    "rl_config": {
+      "return_reward_reduction": false
+    }
+  },
+
+  "edge": {
+    "enabled": false
+  },
+
+  "optimize": {
+    "enabled": false
+  }
+}

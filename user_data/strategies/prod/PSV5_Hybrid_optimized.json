@@ -1,0 +1,21 @@
+{
+  "strategy_name": "PSV5",
+  "params": {
+    "buy": {
+      "buy_adx_min": 22.0,
+      "buy_adx_trend_min": 12.0,
+      "buy_atr_threshold_high": 3.8000000000000003,
+      "buy_atr_threshold_low": 1.6,
+      "buy_ema_proximity_pct": 0.9000000000000001,
+      "buy_roc_threshold": 1.4000000000000001,
+      "buy_rsi_long_max": 47.0,
+      "buy_rsi_short_max": 75.0,
+      "buy_rsi_short_min": 50.0,
+      "buy_volatility_threshold": 2.3,
+      "buy_volume_ratio_min": 1.8
+    },
+    "max_open_trades": {
+      "max_open_trades": 2
+    }
+  }
+}

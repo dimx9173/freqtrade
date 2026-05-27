@@ -1,0 +1,37 @@
+{
+  "strategy_name": "PSV5_Hybrid",
+  "params": {
+    "roi": {
+      "0": 0.06,
+      "180": 0.04,
+      "360": 0.02
+    },
+    "stoploss": {
+      "stoploss": -0.04
+    },
+    "trailing": {
+      "trailing_stop": true,
+      "trailing_stop_positive": 0.02,
+      "trailing_stop_positive_offset": 0.04,
+      "trailing_only_offset_is_reached": true
+    },
+    "max_open_trades": {
+      "max_open_trades": 5
+    },
+    "buy": {
+      "buy_adx_min": 11.0,
+      "buy_adx_trend_min": 15.0,
+      "buy_atr_threshold_high": 2.3,
+      "buy_atr_threshold_low": 0.7,
+      "buy_ema_proximity_pct": 1.1,
+      "buy_roc_threshold": 1.4,
+      "buy_rsi_long_max": 50.0,
+      "buy_rsi_short_max": 63.0,
+      "buy_rsi_short_min": 54.0,
+      "buy_volatility_threshold": 1.4,
+      "buy_volume_ratio_min": 2.0
+    }
+  },
+  "ft_stratparam_v": 1,
+  "export_time": "2026-05-27 00:58:15.494182+00:00"
+}

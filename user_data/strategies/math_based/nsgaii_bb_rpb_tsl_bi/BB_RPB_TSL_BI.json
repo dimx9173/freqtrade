@@ -1,0 +1,89 @@
+{
+  "strategy_name": "BB_RPB_TSL_BI",
+  "params": {
+    "roi": {
+      "0": 0.205
+    },
+    "stoploss": {
+      "stoploss": -0.99
+    },
+    "trailing": {
+      "trailing_stop": false,
+      "trailing_stop_positive": null,
+      "trailing_stop_positive_offset": 0.0,
+      "trailing_only_offset_is_reached": false
+    },
+    "max_open_trades": {
+      "max_open_trades": 5
+    },
+    "buy": {
+      "buy_adx": 14,
+      "buy_bb_delta": 0.022,
+      "buy_bb_factor": 0.994,
+      "buy_bb_width": 0.132,
+      "buy_bb_width_1h": 1.046,
+      "buy_btc_safe": -182,
+      "buy_btc_safe_1d": -0.06,
+      "buy_cci": -103,
+      "buy_cci_length": 36,
+      "buy_closedelta": 15.696,
+      "buy_closedelta_local_dip": 14.121,
+      "buy_clucha_bbdelta_close": 0.025,
+      "buy_clucha_bbdelta_tail": 1.018,
+      "buy_clucha_close_bblower": 0.032,
+      "buy_clucha_closedelta_close": 0.008,
+      "buy_clucha_rocr_1h": 0.12,
+      "buy_cofi_39_r14": -67.801,
+      "buy_cofi_cti": -0.84,
+      "buy_crsi_local_dip": 15,
+      "buy_ema_cofi": 0.984,
+      "buy_ema_diff": 0.025,
+      "buy_ema_diff_local_dip": 0.022,
+      "buy_ema_high": 0.965,
+      "buy_ema_high_2": 0.971,
+      "buy_ema_high_local_dip": 1.123,
+      "buy_ema_low": 0.949,
+      "buy_ema_low_2": 1.063,
+      "buy_ewo": -5.498,
+      "buy_ewo2_cti": -0.532,
+      "buy_ewo2_r14": -80.185,
+      "buy_ewo_high": 10.948,
+      "buy_ewo_high_2": 7.449,
+      "buy_fastd": 22,
+      "buy_fastk": 5,
+      "buy_max_slip": 0.782,
+      "buy_nfix_39_cti": -0.768,
+      "buy_nfix_39_r14": -72.974,
+      "buy_r_deadfish_bb_factor": 1.144,
+      "buy_r_deadfish_bb_width": 0.412,
+      "buy_r_deadfish_cti": -0.495,
+      "buy_r_deadfish_ema": 1.179,
+      "buy_r_deadfish_r14": -59.957,
+      "buy_r_deadfish_volume_factor": 1.559,
+      "buy_rmi": 30,
+      "buy_rmi_length": 19,
+      "buy_roc_1h": 183,
+      "buy_rsi": 21,
+      "buy_rsi_ewo_2": 44,
+      "buy_rsi_fast": 41,
+      "buy_rsi_fast_ewo_2": 26,
+      "buy_rsi_local_dip": 37,
+      "buy_srsi_fk": 48,
+      "buy_threshold": 0.008
+    },
+    "sell": {
+      "sell_btc_safe": -328,
+      "sell_cmf": -0.157,
+      "sell_deadfish_bb_factor": 1.192,
+      "sell_deadfish_bb_width": 0.245,
+      "sell_deadfish_profit": -0.144,
+      "sell_deadfish_volume_factor": 2.405,
+      "sell_ema": 0.99,
+      "sell_ema_close_delta": 0.023,
+      "sell_rsi_delta": 10,
+      "sell_stoploss_new": 0.21
+    }
+  },
+  "ft_stratparam_v": 1,
+  "export_time": "2026-05-21 01:52:57.390089+00:00"
+}

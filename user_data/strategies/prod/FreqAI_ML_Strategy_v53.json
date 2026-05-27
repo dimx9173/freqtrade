@@ -1,0 +1,21 @@
+{
+  "strategy_name": "FreqAI_ML_Strategy_v53",
+  "description": "V53 NO ROI TEST - Only trailing stop + stoploss exits. Tests if ROI is cutting winners short.",
+  "parameters": {
+    "stoploss": -0.12,
+    "trailing_stop": true,
+    "trailing_stop_positive": 0.005,
+    "trailing_stop_positive_offset": 0.015,
+    "trailing_only_offset_is_reached": true,
+    "minimal_roi": {},
+    "can_short": true,
+    "timeframe": "15m",
+    "freqai_enabled": true
+  },
+  "key_changes_from_v43": [
+    "REMOVED all ROI exits (minimal_roi = {})",
+    "Only trailing stop + stoploss for exits",
+    "Enabled can_short for futures 3x testing",
+    "If profit improves, confirms ROI was cutting winners short"
+  ]
+}

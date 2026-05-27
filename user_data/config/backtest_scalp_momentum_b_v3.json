@@ -1,0 +1,45 @@
+{
+  "max_open_trades": 3,
+  "stake_amount": 30,
+  "dry_run_wallet": 1000,
+  "stake_currency": "USDT",
+  "trading_mode": "futures",
+  "margin_mode": "isolated",
+  "dry_run": true,
+  "unfilledtimeout": {
+    "entry": 10,
+    "exit": 10
+  },
+  "entry_pricing": {
+    "price_side": "same",
+    "use_order_book": true,
+    "order_book_top": 1
+  },
+  "exit_pricing": {
+    "price_side": "same",
+    "use_order_book": true,
+    "order_book_top": 1
+  },
+  "exchange": {
+    "name": "bybit",
+    "pair_whitelist": [
+      "BTC/USDT:USDT",
+      "ETH/USDT:USDT",
+      "BNB/USDT:USDT",
+      "XRP/USDT:USDT",
+      "SOL/USDT:USDT"
+    ]
+  },
+  "pairlists": [
+    {
+      "method": "StaticPairList"
+    }
+  ],
+  "leverage": {
+    "BTC/USDT:USDT": 3,
+    "ETH/USDT:USDT": 5,
+    "BNB/USDT:USDT": 3,
+    "XRP/USDT:USDT": 3,
+    "SOL/USDT:USDT": 3
+  }
+}

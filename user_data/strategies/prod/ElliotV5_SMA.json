@@ -1,0 +1,42 @@
+{
+  "strategy_name": "ElliotV5_SMA",
+  "params": {
+    "stoploss": {
+      "stoploss": -0.314
+    },
+    "trailing": {
+      "trailing_stop": false,
+      "trailing_stop_positive": 0.005,
+      "trailing_stop_positive_offset": 0.03,
+      "trailing_only_offset_is_reached": true
+    },
+    "buy": {
+      "base_nb_candles_buy": 80,
+      "ewo_high": 2.153,
+      "ewo_low": -13.191,
+      "low_offset": 0.983,
+      "rsi_buy": 31
+    },
+    "sell": {
+      "base_nb_candles_sell": 42,
+      "high_offset": 1.067,
+      "pHSL": -0.045,
+      "pPF_1": 0.009,
+      "pPF_2": 0.091,
+      "pSL_1": 0.017,
+      "pSL_2": 0.07
+    },
+    "protection": {},
+    "roi": {
+      "0": 0.20900000000000002,
+      "39": 0.096,
+      "69": 0.028,
+      "145": 0
+    },
+    "max_open_trades": {
+      "max_open_trades": 2
+    }
+  },
+  "ft_stratparam_v": 1,
+  "export_time": "2025-04-12 17:29:05.635681+00:00"
+}

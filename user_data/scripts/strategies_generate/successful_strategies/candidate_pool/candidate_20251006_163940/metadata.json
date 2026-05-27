@@ -1,0 +1,98 @@
+{
+  "timestamp": "20251006_163940",
+  "indicators": [
+    "MFI",
+    "ROC"
+  ],
+  "kpis": {
+    "3m": {
+      "3m": {
+        "win_rate": 0.9107142857142857,
+        "trades_per_month": 74.66666666666666,
+        "max_drawdown": 0.006572458240383042,
+        "profit_factor": 0.8585431142064699,
+        "sharpe_ratio": -1.6707864754644015,
+        "total_trades": 224,
+        "profit_total_pct": -0.19
+      },
+      "9m": {
+        "win_rate": 0.8962868117797695,
+        "trades_per_month": 86.77777777777777,
+        "max_drawdown": 0.018181774197660205,
+        "profit_factor": 0.7288618847172296,
+        "sharpe_ratio": -3.6793213087645635,
+        "total_trades": 781,
+        "profit_total_pct": -1.57
+      },
+      "18m": {
+        "win_rate": 0.8959672706019871,
+        "trades_per_month": 95.05555555555556,
+        "max_drawdown": 0.025266365094960785,
+        "profit_factor": 0.8150052066610327,
+        "sharpe_ratio": -2.641851434929687,
+        "total_trades": 1711,
+        "profit_total_pct": -2.07
+      }
+    },
+    "9m": {
+      "3m": {
+        "win_rate": 0.9107142857142857,
+        "trades_per_month": 74.66666666666666,
+        "max_drawdown": 0.006572458240383042,
+        "profit_factor": 0.8585431142064699,
+        "sharpe_ratio": -1.6707864754644015,
+        "total_trades": 224,
+        "profit_total_pct": -0.19
+      },
+      "9m": {
+        "win_rate": 0.8962868117797695,
+        "trades_per_month": 86.77777777777777,
+        "max_drawdown": 0.018181774197660205,
+        "profit_factor": 0.7288618847172296,
+        "sharpe_ratio": -3.6793213087645635,
+        "total_trades": 781,
+        "profit_total_pct": -1.57
+      },
+      "18m": {
+        "win_rate": 0.8959672706019871,
+        "trades_per_month": 95.05555555555556,
+        "max_drawdown": 0.025266365094960785,
+        "profit_factor": 0.8150052066610327,
+        "sharpe_ratio": -2.641851434929687,
+        "total_trades": 1711,
+        "profit_total_pct": -2.07
+      }
+    },
+    "18m": {
+      "3m": {
+        "win_rate": 0.9107142857142857,
+        "trades_per_month": 74.66666666666666,
+        "max_drawdown": 0.006572458240383042,
+        "profit_factor": 0.8585431142064699,
+        "sharpe_ratio": -1.6707864754644015,
+        "total_trades": 224,
+        "profit_total_pct": -0.19
+      },
+      "9m": {
+        "win_rate": 0.8962868117797695,
+        "trades_per_month": 86.77777777777777,
+        "max_drawdown": 0.018181774197660205,
+        "profit_factor": 0.7288618847172296,
+        "sharpe_ratio": -3.6793213087645635,
+        "total_trades": 781,
+        "profit_total_pct": -1.57
+      },
+      "18m": {
+        "win_rate": 0.8959672706019871,
+        "trades_per_month": 95.05555555555556,
+        "max_drawdown": 0.025266365094960785,
+        "profit_factor": 0.8150052066610327,
+        "sharpe_ratio": -2.641851434929687,
+        "total_trades": 1711,
+        "profit_total_pct": -2.07
+      }
+    }
+  },
+  "foundry_passed": true,
+  "promoted_at": "2025-10-06T16:39:40.804341"
+}

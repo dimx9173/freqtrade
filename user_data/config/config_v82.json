@@ -1,0 +1,109 @@
+{
+  "max_open_trades": 3,
+  "stake_currency": "USDT",
+  "stake_amount": 50.0,
+  "tradable_balance_ratio": 1.0,
+  "fiat_display_currency": "USD",
+  "timeframe": "15m",
+  "dry_run_wallet": 1000,
+  "cancel_open_orders_on_exit": false,
+  "trading_mode": "spot",
+  "margin_mode": null,
+  "unfilledtimeout": {
+    "entry": 10,
+    "exit": 10,
+    "exit_timeout_count": 3,
+    "unit": "minutes"
+  },
+  "entry_pricing": {
+    "price_side": "same",
+    "use_order_book": true,
+    "order_book_top": 1,
+    "price_last_balance": 0.0,
+    "check_depth_of_market": {
+      "enabled": false,
+      "bids_to_ask_delta": 1
+    }
+  },
+  "exit_pricing": {
+    "price_side": "same",
+    "use_order_book": true,
+    "order_book_top": 1
+  },
+  "exchange": {
+    "name": "binance",
+    "key": "${BINANCE_KEY}",
+    "secret": "***",
+    "ccxt_config": {},
+    "pair_whitelist": [
+      "BTC/USDT"
+    ],
+    "pair_blacklist": []
+  },
+  "pairlists": [
+    {
+      "method": "StaticPairList"
+    }
+  ],
+  "telegram": {
+    "enabled": false,
+    "token": "",
+    "chat_id": ""
+  },
+  "bot_name": "FreqAI_v82_15m",
+  "initial_state": "running",
+  "force_entry_enable": true,
+  "freqai": {
+    "enabled": true,
+    "train_period_days": 180,
+    "backtest_period_days": 1,
+    "rename_default_feature_list": true,
+    "feature_parameters": {
+      "include_timeframes": [
+        "15m"
+      ],
+      "indicator_periods_candles": [
+        14,
+        20,
+        50
+      ],
+      "include_corr_pairlist": [],
+      "weight_feature_a": 1.0,
+      "weight_feature_b": 1.0,
+      "weight_feature_c": 1.0,
+      "weight_feature_d": 1.0,
+      "weight_feature_e": 1.0,
+      "exclude_expressions": [],
+      "include_shifted_candles": 0,
+      "number_of_shifted_candles": 1,
+      "use_pca": false,
+      "pca_threshold": 0.99,
+      "use_correlation_threshold": false,
+      "correlation_threshold": 0.99,
+      "drawdown_threshold": 0.99,
+      "multiclass_labels": false
+    },
+    "data_kitchen_parameters": {
+      "use_boolean": false,
+      "shuffle_trainingset": false,
+      "balance_training_on": false,
+      "buffer_train_data": 20,
+      "buffer_test_data": 20,
+      "remove_experimental_features": false
+    },
+    "data_split_parameters": {
+      "test_size": 0.15,
+      "shuffle": false,
+      "train_size": 0.85
+    },
+    "model_training_parameters": {
+      "model": "XGBoostRegressor",
+      "n_estimators": 100,
+      "learning_rate": 0.05,
+      "max_depth": 5,
+      "min_child_weight": 5,
+      "subsample": 0.8,
+      "colsample_bytree": 0.8
+    }
+  }
+}

@@ -1,0 +1,56 @@
+{
+    "strategy_name": "FreqAI_ML_Strategy_v80",
+    "ft_stratparm_version": "1",
+    "param_version": "80",
+
+    "strategy_parameters": {
+        "freqai_enabled": true,
+        "timeframe": "1h",
+        "can_short": true,
+        "stoploss": -0.10,
+        "trailing_stop": true,
+        "trailing_stop_positive": 0.005,
+        "trailing_stop_positive_offset": 0.015,
+        "trailing_only_offset_is_reached": true,
+        "minimal_roi": {
+            "0": 0.05
+        },
+
+        "uptrend_prediction_threshold": 0.65,
+        "uptrend_confidence_threshold": 0.70,
+        "uptrend_adx_min": 22,
+        "downtrend_prediction_threshold": 0.72,
+        "downtrend_confidence_threshold": 0.75,
+        "downtrend_adx_min": 22,
+        "sideways_prediction_threshold": 0.70,
+        "sideways_confidence_threshold": 0.75,
+        "volatile_prediction_threshold": 0.72,
+        "volatile_confidence_threshold": 0.75,
+
+        "uptrend_position_mult": 1.3,
+        "downtrend_position_mult": 0.35,
+        "sideways_position_mult": 0.7,
+        "volatile_position_mult": 0.3,
+
+        "uptrend_trailing_offset": 0.025,
+        "downtrend_trailing_offset": 0.012,
+        "sideways_trailing_offset": 0.008,
+        "volatile_trailing_offset": 0.015,
+
+        "dynamic_position_sizing": true,
+        "base_risk_factor": 1.0
+    },
+
+    "metadata": {
+        "created": "2026-05-03",
+        "based_on": "V70",
+        "key_changes": [
+            "Lowered ADX thresholds to 22 (from 28)",
+            "Raised entry thresholds (uptrend 0.65, downtrend 0.72)",
+            "High Vol Override only when ADX marginal (15-25)",
+            "Added Kelly Criterion position sizing",
+            "Added ML Reversal custom exit",
+            "Added composite volatility (ATR + BB width)"
+        ]
+    }
+}

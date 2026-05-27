@@ -1,0 +1,22 @@
+{
+  "strategy_name": "ElliotV5_SMA",
+  "params": {
+    "roi": {
+      "99": 0.035,
+      "48": 0.017,
+      "33": 0.10099999999999999
+    },
+    "stoploss": {
+      "stoploss": -0.20899999999999996
+    },
+    "trailing": {
+      "trailing_stop": true,
+      "trailing_stop_positive": 0.14900000000000002,
+      "trailing_stop_positive_offset": 0.008,
+      "trailing_only_offset_is_reached": true
+    },
+    "max_open_trades": {
+      "max_open_trades": 3
+    }
+  }
+}

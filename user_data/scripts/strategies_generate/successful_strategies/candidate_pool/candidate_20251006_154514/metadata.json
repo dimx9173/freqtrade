@@ -1,0 +1,99 @@
+{
+  "timestamp": "20251006_154514",
+  "indicators": [
+    "Bollinger_Bands",
+    "MOM",
+    "VWAP"
+  ],
+  "kpis": {
+    "3m": {
+      "3m": {
+        "win_rate": 0.7417783191230207,
+        "trades_per_month": 273.66666666666663,
+        "max_drawdown": 0.003379079976021172,
+        "profit_factor": 0.9820050282078886,
+        "sharpe_ratio": -1.0772510871461114,
+        "total_trades": 821,
+        "profit_total_pct": -0.06
+      },
+      "9m": {
+        "win_rate": 0.7397841171935235,
+        "trades_per_month": 288.22222222222223,
+        "max_drawdown": 0.018416998924904632,
+        "profit_factor": 0.877549803724255,
+        "sharpe_ratio": -7.468675195487764,
+        "total_trades": 2594,
+        "profit_total_pct": -1.49
+      },
+      "18m": {
+        "win_rate": 0.7402410505486599,
+        "trades_per_month": 308.8333333333333,
+        "max_drawdown": 0.03320798202880457,
+        "profit_factor": 0.8762758283821533,
+        "sharpe_ratio": -7.300243240533826,
+        "total_trades": 5559,
+        "profit_total_pct": -3.21
+      }
+    },
+    "9m": {
+      "3m": {
+        "win_rate": 0.7417783191230207,
+        "trades_per_month": 273.66666666666663,
+        "max_drawdown": 0.003379079976021172,
+        "profit_factor": 0.9820050282078886,
+        "sharpe_ratio": -1.0772510871461114,
+        "total_trades": 821,
+        "profit_total_pct": -0.06
+      },
+      "9m": {
+        "win_rate": 0.7397841171935235,
+        "trades_per_month": 288.22222222222223,
+        "max_drawdown": 0.018416998924904632,
+        "profit_factor": 0.877549803724255,
+        "sharpe_ratio": -7.468675195487764,
+        "total_trades": 2594,
+        "profit_total_pct": -1.49
+      },
+      "18m": {
+        "win_rate": 0.7402410505486599,
+        "trades_per_month": 308.8333333333333,
+        "max_drawdown": 0.03320798202880457,
+        "profit_factor": 0.8762758283821533,
+        "sharpe_ratio": -7.300243240533826,
+        "total_trades": 5559,
+        "profit_total_pct": -3.21
+      }
+    },
+    "18m": {
+      "3m": {
+        "win_rate": 0.7417783191230207,
+        "trades_per_month": 273.66666666666663,
+        "max_drawdown": 0.003379079976021172,
+        "profit_factor": 0.9820050282078886,
+        "sharpe_ratio": -1.0772510871461114,
+        "total_trades": 821,
+        "profit_total_pct": -0.06
+      },
+      "9m": {
+        "win_rate": 0.7397841171935235,
+        "trades_per_month": 288.22222222222223,
+        "max_drawdown": 0.018416998924904632,
+        "profit_factor": 0.877549803724255,
+        "sharpe_ratio": -7.468675195487764,
+        "total_trades": 2594,
+        "profit_total_pct": -1.49
+      },
+      "18m": {
+        "win_rate": 0.7402410505486599,
+        "trades_per_month": 308.8333333333333,
+        "max_drawdown": 0.03320798202880457,
+        "profit_factor": 0.8762758283821533,
+        "sharpe_ratio": -7.300243240533826,
+        "total_trades": 5559,
+        "profit_total_pct": -3.21
+      }
+    }
+  },
+  "foundry_passed": true,
+  "promoted_at": "2025-10-06T15:45:14.610197"
+}

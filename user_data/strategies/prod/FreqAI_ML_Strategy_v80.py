@@ -24,6 +24,9 @@ warnings.filterwarnings("ignore")
 logger = logging.getLogger(__name__)
 
 
+_mtf_depth = 0
+
+
 class FreqAI_ML_Strategy_v80(IStrategy):
     """
     FreqAI ML Strategy V80 - Enhanced Regime Detection
@@ -158,19 +161,33 @@ class FreqAI_ML_Strategy_v80(IStrategy):
         """Calculate Smoothed Moving Average"""
         return series.ewm(alpha=1 / period, min_periods=period).mean()
 
+    def feature_engineering_standard(
+        self, dataframe: DataFrame, metadata: dict, **kwargs
+    ) -> DataFrame:
+        """
+        FreqAI feature engineering — creates %-prefixed features for ML training.
+        This method is called by FreqAI via use_strategy_to_populate_indicators().
+        Indicators from populate_indicators() are already available in the dataframe.
+        """
+        # Only 3 essential features for fast training iteration
+        for feat in ["rsi", "bb_percent", "volume_ratio"]:
+            if feat in dataframe.columns:
+                dataframe[f"%{feat}"] = dataframe[feat]
+
+        return dataframe
+
     def set_freqai_targets(self, dataframe: DataFrame, metadata: dict, **kwargs) -> DataFrame:
         """
-        FreqAI target: predict the future return over label_period_candles (24 = 6 hours for 15m).
+        FreqAI target: predict the future return over label_period_candles (48 = 12 hours for 15m).
         The label_pipeline will standardize this to a z-score.
         Thresholds of 0.65-0.72 correspond to ~0.65-0.72 standard deviations above mean.
         """
-        label_period = self.freqai_info.get("feature_parameters", {}).get("label_period_candles", 24)
+        label_period = self.freqai_info.get("feature_parameters", {}).get(
+            "label_period_candles", 48
+        )
+        # Simple future return: (price_N_candles_from_now - current_price) / current_price
         dataframe["&ml_prediction"] = (
-            dataframe["close"]
-            .shift(-label_period)
-            .rolling(label_period).mean()
-            / dataframe["close"]
-            - 1
+            dataframe["close"].shift(-label_period) / dataframe["close"] - 1
         )
         return dataframe
 
@@ -322,59 +339,70 @@ class FreqAI_ML_Strategy_v80(IStrategy):
 
         # ===========================================
         # FREQAI ML FEATURES
+        # NOTE: self.freqai.start() must NOT be called here — it causes infinite recursion.
+        # FreqAI framework calls feature_engineering_standard() which calls this function,
+        # and if populate_indicators calls self.freqai.start(), it loops forever.
+        # FreqAI predictions (&ml_prediction) are set by the framework after this returns.
         # ===========================================
-        try:
-            if self.freqai_enabled and hasattr(self, "freqai"):
-                dataframe = self.freqai.start(dataframe, metadata, self)
-            else:
-                dataframe["&ml_prediction"] = 0.50
-                dataframe["&ml_confidence"] = 0.50
-        except Exception as e:
-            dataframe["&ml_prediction"] = 0.50
-            dataframe["&ml_confidence"] = 0.50
+        dataframe["&ml_prediction"] = 0.0
+        dataframe["&ml_confidence"] = 0.0
 
         return dataframe
 
     def add_multi_timeframe_features(self, dataframe: DataFrame, metadata: dict) -> DataFrame:
-        """Multi-timeframe confirmation features"""
+        """Multi-timeframe confirmation features.
 
+        NOTE: This adds indicators from 4h/1d to the 15m base dataframe.
+        The actual 4h/1d data merge is handled by FreqAI's populate_features()
+        via include_timeframes. Here we only add computed indicators (RSI, EMA, etc.)
+        directly to the base dataframe WITHOUT merging (to avoid duplicate column
+        conflicts when populate_features also adds 4h/1d).
+        """
         for tf in self.informative_timeframes:
             try:
                 informative = self.dp.get_pair_dataframe(pair=metadata["pair"], timeframe=tf)
+                if informative.empty:
+                    continue
 
-                # freqtrade DataFrames use DatetimeIndex, reset to 'date' column for merge_informative_pair
-                informative = informative.reset_index()
-                if "date" not in informative.columns and "datetime" in informative.columns:
-                    informative = informative.rename(columns={"datetime": "date"})
+                # Keep OHLCV for TA-Lib calculation
+                close = informative["close"]
+                high = informative["high"]
+                low = informative["low"]
+                volume = informative["volume"]
 
-                informative[f"rsi_{tf}"] = ta.RSI(informative["close"], timeperiod=14)
-                informative[f"ema_21_{tf}"] = ta.EMA(informative["close"], timeperiod=21)
-                informative[f"volume_ratio_{tf}"] = informative["volume"] / self.calc_smma(
-                    informative["volume"], 20
-                )
-                informative[f"adx_{tf}"] = ta.ADX(
-                    informative["high"], informative["low"], informative["close"], timeperiod=14
-                )
+                # Compute indicators on the informative timeframe
+                rsi_tf = pd.Series(ta.RSI(close, timeperiod=14), index=close.index)
+                ema21_tf = pd.Series(ta.EMA(close, timeperiod=21), index=close.index)
+                smma_vol = close.rolling(20).mean()
+                volume_ratio_tf = pd.Series(volume.values / smma_vol.values, index=close.index)
+                adx_tf = pd.Series(ta.ADX(high, low, close, timeperiod=14), index=close.index)
 
-                informative[f"trend_up_{tf}"] = informative[f"ema_21_{tf}"] > informative[
-                    f"ema_21_{tf}"
-                ].shift(5)
-
-                dataframe = self.merge_informative_pair_safe(
-                    dataframe, informative, self.timeframe, tf, ffill=True
-                )
+                # Reindex to match base dataframe and add
+                dataframe[f"rsi_{tf}"] = rsi_tf.reindex(dataframe.index)
+                dataframe[f"ema_21_{tf}"] = ema21_tf.reindex(dataframe.index)
+                dataframe[f"volume_ratio_{tf}"] = volume_ratio_tf.reindex(dataframe.index)
+                dataframe[f"adx_{tf}"] = adx_tf.reindex(dataframe.index)
+                dataframe[f"trend_up_{tf}"] = pd.Series(
+                    (ema21_tf > ema21_tf.shift(5)).values, index=close.index
+                ).reindex(dataframe.index)
 
             except Exception as e:
-                logger.warning(f"Failed to add {tf} timeframe data: {e}")
+                logger.warning(f"Failed to add {tf} timeframe features: {e}")
                 continue
 
+        # ===========================================
+        # FREQAI: MUST be called here in populate_indicators()
+        # freqai.start() -> use_strategy_to_populate_indicators() ->
+        # feature_engineering_standard() (NOT populate_indicators, so no recursion)
+        # ===========================================
+        dataframe = self.freqai.start(dataframe, metadata, self)
+
+        # Copy FreqAI prediction to non-prefixed column for strategy entry/exit logic
+        # FreqAI stores prediction as "&ml_prediction", strategy expects "ml_prediction"
+        if "&ml_prediction" in dataframe.columns:
+            dataframe["ml_prediction"] = dataframe["&ml_prediction"]
+
         return dataframe
-
-    def merge_informative_pair_safe(self, dataframe, informative, timeframe, tf, ffill=True):
-        """Safe merge for informative pairs"""
-        from freqtrade.strategy import merge_informative_pair
-
-        return merge_informative_pair(dataframe, informative, timeframe, tf, ffill=ffill)
 
     def detect_market_regime(self, dataframe: DataFrame) -> DataFrame:
         """
@@ -514,14 +542,6 @@ class FreqAI_ML_Strategy_v80(IStrategy):
         - Added EMA confirmation for all regimes
         """
 
-        # ML signals
-        if self.freqai_enabled:
-            ml_prediction = dataframe.get("&ml_prediction", 0.5)
-            ml_confidence = dataframe.get("&ml_confidence", 0.5)
-        else:
-            ml_prediction = 0.50
-            ml_confidence = 0.50
-
         regime = dataframe["market_regime"]
 
         # ===========================================
@@ -557,11 +577,18 @@ class FreqAI_ML_Strategy_v80(IStrategy):
 
         # ===========================================
         # V80 FALLBACK: Same as V70 — use effective thresholds
-        # When no ML model is available (ml == 0.50), fallback to 0.50
+        # When no ML model is available (ml == 0), use higher thresholds
+        # to avoid overtrading in uncertain conditions
+        # Note: FreqAI predictions are MinMaxScaled to [-1, 1], so thresholds
+        # should be in that range. ml_confidence is not a standard FreqAI column
+        # for regression — use abs(ml_prediction) as a proxy.
         # ===========================================
-        has_ml_signal = (ml_prediction != 0.50) | (ml_confidence != 0.50)
+        has_ml_signal = dataframe.get("&ml_prediction", 0.0) != 0.0
+        ml_prediction = dataframe.get("&ml_prediction", 0.0)
+        # Use absolute prediction as confidence proxy (regression doesn't have native confidence)
+        ml_confidence = np.abs(ml_prediction)
         effective_pred_thresh = np.where(has_ml_signal, prediction_thresh, 0.50)
-        effective_conf_thresh = np.where(has_ml_signal, confidence_thresh, 0.50)
+        effective_conf_thresh = np.where(has_ml_signal, confidence_thresh, 0.40)
 
         # ===========================================
         # BASE CONDITIONS (Universal)
@@ -687,10 +714,11 @@ class FreqAI_ML_Strategy_v80(IStrategy):
 
         try:
             dataframe = self.dp.get_pair_dataframe(pair=pair, timeframe=self.timeframe)
-            ml_prediction = dataframe["&ml_prediction"].iloc[-1]
-            ml_confidence = dataframe.get("&ml_confidence", 0.5)
-            if hasattr(ml_confidence, 'iloc'):
-                ml_confidence = ml_confidence.iloc[-1]
+            ml_prediction = dataframe.get("&ml_prediction", 0.0)
+            if hasattr(ml_prediction, "iloc"):
+                ml_prediction = ml_prediction.iloc[-1]
+            # Use absolute prediction as confidence proxy
+            ml_confidence = abs(ml_prediction)
             regime = dataframe["market_regime"].iloc[-1]
         except (KeyError, IndexError, Exception):
             return None
@@ -698,8 +726,8 @@ class FreqAI_ML_Strategy_v80(IStrategy):
         # ===========================================
         # ML REVERSAL EXIT
         # ===========================================
-        if (ml_prediction < 0.35 and ml_confidence > 0.70) or (
-            ml_prediction > 0.65 and ml_confidence > 0.70
+        if (ml_prediction < -0.35 and ml_confidence > 0.35) or (
+            ml_prediction > 0.35 and ml_confidence > 0.35
         ):
             return "ml_reversal_exit"
 

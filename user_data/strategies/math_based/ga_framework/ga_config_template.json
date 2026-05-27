@@ -1,0 +1,58 @@
+{
+  "ga_framework": {
+    "version": "1.0",
+    "description": "數學策略 GA 迭代框架設定模板",
+    "default_settings": {
+      "epochs": 500,
+      "jobs": 1,
+      "time_months": 6,
+      "loss_functions": [
+        "ProfitDrawDownHyperOptLoss",
+        "SortinoHyperOptLoss",
+        "SharpeHyperOptLoss",
+        "CalmarHyperOptLoss"
+      ],
+      "spaces_options": [
+        "default",
+        "buy",
+        "sell",
+        "roi",
+        "stoploss",
+        "trailing",
+        "buy sell",
+        "buy sell roi",
+        "buy sell roi stoploss"
+      ]
+    },
+    "math_strategies": {
+      "nsgaii_bb_rpb_tsl_bi": {
+        "description": "BB_RPB_TSL_BI + NSGAII 優化",
+        "timeframe": "5m",
+        "recommended_epochs": 1000,
+        "recommended_loss": "ProfitDrawDownHyperOptLoss",
+        "recommended_spaces": "buy sell roi stoploss"
+      },
+      "MathCombo_Adaptive_v1": {
+        "description": "數學組合自適應策略",
+        "timeframe": "5m",
+        "recommended_epochs": 500,
+        "recommended_loss": "SortinoHyperOptLoss",
+        "recommended_spaces": "default"
+      },
+      "PolyReg_Adaptive_v1": {
+        "description": "多項式回歸自適應策略",
+        "timeframe": "5m",
+        "recommended_epochs": 500,
+        "recommended_loss": "SharpeHyperOptLoss",
+        "recommended_spaces": "default"
+      },
+      "Adaptive_Scalp_v2": {
+        "description": "ADX + BB + RSI 自適應策略",
+        "timeframe": "5m",
+        "recommended_epochs": 500,
+        "recommended_loss": "ProfitDrawDownHyperOptLoss",
+        "recommended_spaces": "buy sell"
+      }
+    }
+  }
+}

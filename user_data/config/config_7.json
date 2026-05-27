@@ -1,0 +1,139 @@
+{
+
+    "max_open_trades": 5,
+    "stake_currency": "USDT",
+    "stake_amount": 50,
+    "tradable_balance_ratio": 0.99,
+    "dry_run": true,
+    "dry_run_wallet": 1000,
+    "cancel_open_orders_on_exit": false,
+    "trading_mode": "futures",
+    "margin_mode": "isolated",
+    "liquidation_buffer": 0.05,
+    "unfilledtimeout": {
+        "entry": 3,
+        "exit": 5,
+        "exit_timeout_count": 0,
+        "unit": "minutes"
+    },
+    "stoploss": -0.2,
+    "trailing_stop": true,
+    "trailing_stop_positive": 0.0015,
+    "trailing_stop_positive_offset": 0.009,
+    "trailing_only_offset_is_reached": true,
+    "order_types": {
+        "entry": "market",
+        "exit": "market",
+        "emergency_exit": "market",
+        "force_entry": "market",
+        "force_exit": "market",
+        "stoploss": "market",
+        "stoploss_on_exchange": false,
+        "stoploss_on_exchange_interval": 60
+    },
+    "entry_pricing": {
+        "price_side": "other",
+        "use_order_book": true,
+        "order_book_top": 1,
+        "price_last_balance": 0.0,
+        "check_depth_of_market": {
+            "enabled": false,
+            "bids_to_ask_delta": 1
+        }
+    },
+    "exit_pricing":{
+        "price_side": "other",
+        "use_order_book": true,
+        "order_book_top": 1
+    },
+    "exchange": {
+        "name": "bybit",
+        "sandbox": false,
+        "key": "CMNOywDAu9naDv8gfB", //freqtrade07
+        "secret": "8KLdkCkAnh76xE3I6wni4AhzYmtoukJtJrjS",
+        "slippage_allowed": 0.001,
+        "ccxt_config": {
+            "enableRateLimit": true,
+            "options": {
+                "adjustForTimeDifference": true,
+                "recvWindow": 30000,
+                "defaultType": "swap"
+            },
+            "fee": 0.0011,
+            "leverage": 1
+        },
+        "ccxt_async_config": {
+            "enableRateLimit": true,
+            "rateLimit": 30
+        },
+        // "pair_whitelist": [
+        // ],
+        "pair_blacklist": [
+            ".*BEAR.*",
+            ".*BULL.*",
+            "XRP/USDT:USDT",
+            "XLM/USDT:USDT",
+            "XMR/USDT:USDT",
+            "ZEC/USDT:USDT",
+            "WLFI/USDT:USDT"
+        ]
+    },
+    "pairlists": [
+        {
+            "method": "RemotePairList",
+            "pairlist_url": "file:///user_data/config/coinmarketcap-future-pairlist.json",
+            "number_assets": 50,
+            "refresh_period": 1800, // 30 minutes
+            "keep_pairlist_on_failure": true,
+            "read_timeout": 60
+        }
+    ],
+    "telegram": {
+        "enabled": true,
+        "token": "7386355760:AAH1c1V51jIu9GN3RMoQJieSmsim81K1-n4",//7
+        "chat_id": "-545048568",
+        "notification_settings": {
+            "status": "silent",
+            "warning": "on",
+            "startup": "off",
+            "entry": "silent",
+            "entry_fill": "on",
+            "entry_cancel": "silent",
+            "exit": {
+                "roi": "silent",
+                "emergency_exit": "on",
+                "force_exit": "on",
+                "exit_signal": "silent",
+                "trailing_stop_loss": "on",
+                "stop_loss": "on",
+                "stoploss_on_exchange": "on",
+                "custom_exit": "silent",
+                "partial_exit": "on"
+            },
+            "exit_cancel": "on",
+            "exit_fill": "off",
+            "protection_trigger": "off",
+            "protection_trigger_global": "on",
+            "strategy_msg": "off",
+            "show_candle": "ohlc"
+        },
+    "reload": true,
+    "balance_dust_level": 0.01
+    },
+    "api_server": {
+        "enabled": true,
+        "listen_ip_address": "0.0.0.0",
+        "listen_port": 13997,
+        "verbosity": "info",
+        "jwt_secret_key": "dupx4657",
+        "CORS_origins": ["http://95.216.217.9:13991"],
+        "username": "carlos",
+        "password": "dupx4657"
+    },
+    "bot_name": "tradingbot7",
+    "initial_state": "running",
+    "force_entry_enable": false,
+    "internals": {
+        "process_throttle_secs": 5
+    }
+}

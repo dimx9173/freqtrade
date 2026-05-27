@@ -1,0 +1,28 @@
+{
+  "pairs": [
+    "BTC/USDT:USDT",
+    "ETH/USDT:USDT",
+    "BNB/USDT:USDT",
+    "XRP/USDT:USDT",
+    "SOL/USDT:USDT",
+    "TRX/USDT:USDT",
+    "DOGE/USDT:USDT",
+    "HYPE/USDT:USDT",
+    "ZEC/USDT:USDT",
+    "ADA/USDT:USDT",
+    "XMR/USDT:USDT",
+    "BCH/USDT:USDT",
+    "LINK/USDT:USDT",
+    "CC/USDT:USDT",
+    "TON/USDT:USDT",
+    "XLM/USDT:USDT",
+    "USD1/USDT:USDT",
+    "SUI/USDT:USDT",
+    "LTC/USDT:USDT",
+    "M/USDT:USDT",
+    "AVAX/USDT:USDT",
+    "HBAR/USDT:USDT",
+    "NEAR/USDT:USDT"
+  ],
+  "refresh_period": 1800
+}

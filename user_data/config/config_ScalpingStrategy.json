@@ -1,0 +1,95 @@
+{
+    "max_open_trades": 5,
+    "stake_currency": "USDT",
+    "stake_amount": 200,
+    "tradable_balance_ratio": 0.90,
+    "dry_run": true,
+    "dry_run_wallet": 1000,
+    "cancel_open_orders_on_exit": false,
+    "trading_mode": "spot",
+    "strategy": "ScalpingStrategy",
+    "unfilledtimeout": {
+        "entry": 1,
+        "exit": 1,
+        "exit_timeout_count": 0,
+        "unit": "minutes"
+    },
+    "trailing_stop": true,
+    "trailing_stop_positive": 0.004,
+    "trailing_stop_positive_offset": 0.006,
+    "trailing_only_offset_is_reached": true,
+    "order_types": {
+        "entry": "market",
+        "exit": "market",
+        "emergency_exit": "market",
+        "force_entry": "market",
+        "force_exit": "market",
+        "stoploss": "market",
+        "stoploss_on_exchange": false,
+        "stoploss_on_exchange_interval": 60
+    },
+    "entry_pricing": {
+        "price_side": "other",
+        "use_order_book": true,
+        "order_book_top": 1,
+        "price_last_balance": 0.0,
+        "check_depth_of_market": {
+            "enabled": false,
+            "bids_to_ask_delta": 1
+        }
+    },
+    "exit_pricing":{
+        "price_side": "other",
+        "use_order_book": true,
+        "order_book_top": 1
+    },
+    "exchange": {
+        "name": "bybit",
+        "sandbox": false,
+        "key": "",
+        "secret": "",
+        "slippage_allowed": 0.001,
+        "ccxt_config": {
+            "enableRateLimit": true,
+            "options": {
+                "adjustForTimeDifference": true,
+                "recvWindow": 60000
+            },
+            "fee": 0.0011
+        },
+        "ccxt_async_config": {
+            "enableRateLimit": true,
+            "rateLimit": 50
+        },
+        "pair_blacklist": [
+        ]
+    },
+    "pairlists": [
+        {
+            "method": "RemotePairList",
+            "pairlist_url": "file:///user_data/config/coinmarketcap-pairlist.json",
+            "number_assets": 15,
+            "refresh_period": 1800,
+            "keep_pairlist_on_failure": true,
+            "read_timeout": 60
+        }
+    ],
+    "bot_name": "ScalpingStrategy",
+    "initial_state": "running",
+    "force_entry_enable": false,
+    "internals": {
+        "process_throttle_secs": 1
+    },
+    "api_server": {
+        "enabled": false,
+        "listen_ip_address": "127.0.0.1",
+        "listen_port": 8080,
+        "username": "freqtrade",
+        "password": "FreqtradePassword"
+    },
+    "telegram": {
+        "enabled": false,
+        "token": "dummy_token",
+        "chat_id": "dummy_chat_id"
+    }
+}

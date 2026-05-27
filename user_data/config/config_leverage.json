@@ -1,0 +1,38 @@
+{
+  "max_open_trades": 1,
+  "stake_amount": 10,
+  "dry_run_wallet": 1000,
+  "stake_currency": "USDT",
+  "trading_mode": "spot",
+  "margin_mode": "isolated",
+  "leverage": {
+    "long": 5,
+    "short": 5
+  },
+  "dry_run": true,
+  "unfilledtimeout": {
+    "entry": 10,
+    "exit": 10
+  },
+  "entry_pricing": {
+    "price_side": "same",
+    "use_order_book": true,
+    "order_book_top": 1
+  },
+  "exit_pricing": {
+    "price_side": "same",
+    "use_order_book": true,
+    "order_book_top": 1
+  },
+  "exchange": {
+    "name": "bybit",
+    "pair_whitelist": [
+      "ETH/USDT"
+    ]
+  },
+  "pairlists": [
+    {
+      "method": "StaticPairList"
+    }
+  ]
+}

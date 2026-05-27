@@ -1,0 +1,81 @@
+{
+  "max_open_trades": 5,
+  "stake_amount": 50,
+  "dry_run_wallet": 1000,
+  "stake_currency": "USDT",
+  "trading_mode": "futures",
+  "margin_mode": "isolated",
+  "unfilledtimeout": {
+    "entry": 10,
+    "exit": 10,
+    "exit_timeout_count": 0,
+    "unit": "minutes"
+  },
+  "entry_pricing": {
+    "price_side": "same",
+    "use_order_book": false
+  },
+  "exit_pricing": {
+    "price_side": "same",
+    "use_order_book": false
+  },
+  "exchange": {
+    "name": "bybit",
+    "pair_whitelist": [
+      "BTC/USDT:USDT",
+      "ETH/USDT:USDT",
+      "XRP/USDT:USDT",
+      "BNB/USDT:USDT",
+      "SOL/USDT:USDT",
+      "TRX/USDT:USDT",
+      "DOGE/USDT:USDT",
+      "HYPE/USDT:USDT",
+      "AVAX/USDT:USDT",
+      "ADA/USDT:USDT",
+      "BCH/USDT:USDT",
+      "LINK/USDT:USDT",
+      "XMR/USDT:USDT",
+      "ZEC/USDT:USDT",
+      "CC/USDT:USDT"
+    ]
+  },
+  "pairlists": [
+    {
+      "method": "StaticPairList",
+      "pair_whitelist": [
+        "BTC/USDT:USDT",
+        "ETH/USDT:USDT",
+        "XRP/USDT:USDT",
+        "BNB/USDT:USDT",
+        "SOL/USDT:USDT",
+        "TRX/USDT:USDT",
+        "DOGE/USDT:USDT",
+        "HYPE/USDT:USDT",
+        "AVAX/USDT:USDT",
+        "ADA/USDT:USDT",
+        "BCH/USDT:USDT",
+        "LINK/USDT:USDT",
+        "XMR/USDT:USDT",
+        "ZEC/USDT:USDT",
+        "CC/USDT:USDT"
+      ]
+    }
+  ],
+  "leverage": {
+    "BTC/USDT:USDT": 3,
+    "ETH/USDT:USDT": 3,
+    "BNB/USDT:USDT": 3,
+    "XRP/USDT:USDT": 3,
+    "SOL/USDT:USDT": 3,
+    "TRX/USDT:USDT": 3,
+    "DOGE/USDT:USDT": 3,
+    "HYPE/USDT:USDT": 3,
+    "AVAX/USDT:USDT": 2,
+    "ADA/USDT:USDT": 3,
+    "BCH/USDT:USDT": 3,
+    "LINK/USDT:USDT": 3,
+    "XMR/USDT:USDT": 2,
+    "ZEC/USDT:USDT": 2,
+    "CC/USDT:USDT": 2
+  }
+}

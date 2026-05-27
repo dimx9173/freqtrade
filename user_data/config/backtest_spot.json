@@ -1,0 +1,25 @@
+{
+  "max_open_trades": 5,
+  "stake_amount": 50,
+  "dry_run_wallet": 1000,
+  "stake_currency": "USDT",
+  "trading_mode": "spot",
+  "unfilledtimeout": {
+    "entry": 10,
+    "exit": 10,
+    "exit_timeout_count": 0,
+    "unit": "minutes"
+  },
+  "exchange": {
+    "name": "bybit"
+  },
+  "pairlists": [
+    {
+      "method": "StaticPairList",
+      "pair_whitelist": [
+        "ETH/USDT",
+        "BTC/USDT"
+      ]
+    }
+  ]
+}

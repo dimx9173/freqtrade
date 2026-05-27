@@ -1,0 +1,203 @@
+{
+  "max_open_trades": 3,
+  "stake_currency": "USDT",
+  "stake_amount": 100,
+  "tradable_balance_ratio": 0.95,
+  "dry_run": true,
+  "dry_run_wallet": 1000,
+  "cancel_open_orders_on_exit": false,
+  "trading_mode": "futures",
+  "margin_mode": "isolated",
+
+  "entry_pricing": {
+    "price_side": "same",
+    "use_order_book": true,
+    "order_book_top": 1,
+    "price_last_balance": 0.0,
+    "check_depth_of_market": {
+      "enabled": false
+    }
+  },
+  "exit_pricing": {
+    "price_side": "same",
+    "use_order_book": true,
+    "order_book_top": 1
+  },
+
+  "dataformat_ohlcv": "feather",
+  "dataformat_trades": "feather",
+
+  "exchange": {
+    "name": "binance",
+    "key": "kfubX0XvGx4NG8N3eQbYKFKW1EbOFLwZyjGA9tFhFXYMOaPjCjsGc91AGsJxQIge",
+    "secret": "3HdqHJaaB3YASdh4YMGNChTyUiWx4KSLWFLAfvs8fYW8pkyQCV9x4RmBIizdG3RX",
+    "ccxt_config": {},
+    "ccxt_async_config": {},
+    "pair_whitelist": [
+      "BTC/USDT:USDT"
+    ],
+    "pair_blacklist": [],
+    "markets_refresh_interval": 60
+  },
+
+  "pairlists": [
+    {
+      "method": "StaticPairList",
+      "number_assets": 1
+    }
+  ],
+
+  "timeframe": "5m",
+
+  "telegram": {
+    "enabled": false,
+    "token": "",
+    "chat_id": ""
+  },
+
+  "api_server": {
+    "enabled": true,
+    "listen_ip_address": "0.0.0.0",
+    "listen_port": 14005,
+    "verbosity": "info",
+    "jwt_secret_key": "change-me-phase5-ultrafast",
+    "CORS_origins": ["http://localhost:8080"],
+    "username": "",
+    "password": ""
+  },
+
+  "bot_name": "ensemble_phase5_ultrafast_bot",
+  "initial_state": "running",
+  "force_entry_enable": false,
+
+  "internals": {
+    "process_throttle_secs": 1,
+    "allowed_trials": 5
+  },
+
+  "freqai": {
+    "enabled": true,
+    "identifier": "ensemble_phase5_ultrafast",
+    "freqaimodel": "HybridEnsembleRegressor",
+    "train_period_days": 30,
+    "backtest_period_days": 10,
+
+    "data_split_parameters": {
+      "test_size": 0.25,
+      "shuffle": false,
+      "random_state": 42
+    },
+
+    "feature_parameters": {
+      "include_timeframes": ["5m"],
+      "include_corr_pairlist": [
+        "BTC/USDT:USDT"
+      ],
+      "include_shifted_candles": 0,
+      "label_period_candles": 1,
+      "indicator_periods_candles": [5, 13],
+      "DI_threshold": 0,
+      "principal_component_analysis": false,
+      "use_SVM_to_remove_outliers": false,
+      "weight_factor": 0.9,
+      "noise_standard_deviation": 0.0001,
+      "buffer_train_data_candles": 3
+    },
+
+    "model_training_parameters": {
+      "lightgbm": {
+        "n_estimators": 10,
+        "learning_rate": 0.15,
+        "max_depth": 3,
+        "min_child_samples": 30,
+        "subsample": 0.9,
+        "colsample_bytree": 0.9,
+        "reg_alpha": 0.05,
+        "reg_lambda": 0.05,
+        "random_state": 42,
+        "verbose": -1,
+        "n_jobs": -1
+      },
+      "xgboost": {
+        "n_estimators": 10,
+        "learning_rate": 0.15,
+        "max_depth": 3,
+        "min_child_weight": 1,
+        "subsample": 0.9,
+        "colsample_bytree": 0.9,
+        "reg_alpha": 0.05,
+        "reg_lambda": 0.05,
+        "random_state": 42,
+        "verbosity": 0,
+        "n_jobs": -1
+      },
+      "deep_learning": {
+        "sequence_length": 5,
+        "epochs": 8,
+        "batch_size": 128,
+        "learning_rate": 0.03,
+        "early_stopping_patience": 3,
+        "phase5b_enhanced": {
+          "use_attention": false,
+          "cnn_filters": [8, 16],
+          "cnn_kernel_sizes": [3],
+          "lstm_hidden_size": 16,
+          "lstm_num_layers": 1,
+          "dropout": 0.1,
+          "use_bidirectional": false
+        }
+      },
+      "meta_model": {
+        "n_estimators": 10,
+        "learning_rate": 0.2,
+        "max_depth": 3,
+        "random_state": 42,
+        "verbose": -1
+      },
+      "phase5c_meta_intelligence": {
+        "num_base_models": 4,
+        "meta_hidden_size": 16,
+        "reliability_threshold": 0.5,
+        "confidence_threshold": 0.6,
+        "performance_window": 20,
+        "learning_rate": 0.05
+      },
+      "phase5d_online_learning": {
+        "learning_rate": 0.05,
+        "adaptation_window": 20,
+        "retraining_threshold": 0.2,
+        "drift_threshold": 0.2,
+        "warning_threshold": 0.1,
+        "retrain_cooldown": 30,
+        "max_retrains_per_hour": 10,
+        "buffer_size_multiplier": 1.2
+      }
+    },
+
+    "extra_returns_per_train": {
+      "&-price_target": 0.0,
+      "&-trend_target": 0.0,
+      "ensemble_confidence": 0.7,
+      "model_consensus": 0.75
+    },
+
+    "multitarget_parallel_training": false,
+    "purge_old_models": 2,
+    "save_backtest_models": false,
+    "follow_mode": false,
+    "continual_learning": false,
+    "write_metrics_to_disk": false,
+
+    "rl_config": {
+      "return_reward_reduction": false
+    }
+  },
+
+  "edge": {
+    "enabled": false
+  },
+
+  "optimize": {
+    "enabled": false
+  }
+}

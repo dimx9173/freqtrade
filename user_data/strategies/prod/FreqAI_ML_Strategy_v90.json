@@ -1,0 +1,17 @@
+{
+    "strategy_version": "v90",
+    "strategy_name": "FreqAI_ML_Strategy_v90",
+    "timeframe": "5m",
+    "stoploss": -0.003,
+    "minimal_roi": {
+        "0": 0.006
+    },
+    "max_open_trades": 2,
+    "stake_amount": 50.0,
+    "trailing_stop": true,
+    "trailing_stop_positive": 0.01,
+    "trailing_stop_positive_offset": 0.02,
+    "freqai_enable": true,
+    "description": "FreqAI ML Strategy V90 - Regression model with tight stoploss and low ROI targets",
+    "notes": "Based on v85 architecture with adjusted risk parameters: stoploss=-0.3%, minimal_roi=0.6%, max_open_trades=2"
+}
