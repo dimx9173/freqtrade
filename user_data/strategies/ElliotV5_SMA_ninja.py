@@ -20,14 +20,14 @@ from freqtrade.strategy import (
 import technical.indicators as ftt
 
 buy_params = {
-    "base_nb_candles_buy": 17,
-    "ewo_high": 3.34,
-    "ewo_low": -17.457,
-    "low_offset": 0.978,
-    "rsi_buy": 65,
+    "base_nb_candles_buy": 51,
+    "ewo_high": 7.382,
+    "ewo_low": -16.362,
+    "low_offset": 0.986,
+    "rsi_buy": 43,
 }
 
-sell_params = {"base_nb_candles_sell": 49, "high_offset": 1.019}
+sell_params = {"base_nb_candles_sell": 14, "high_offset": 1.006}
 
 
 def EWO(dataframe, ema_length=5, ema2_length=35):
@@ -230,18 +230,16 @@ class ElliotV5_SMA_ninja(IStrategy):
         return dataframe
 
     def populate_indicators(self, dataframe: DataFrame, metadata: dict) -> DataFrame:
-        # Only create EMA for CURRENT param value (not full range) — major memory optimization
-        dataframe[f"ma_buy_{self.base_nb_candles_buy.value}"] = ta.EMA(
-            dataframe, timeperiod=self.base_nb_candles_buy.value
-        )
-        dataframe[f"ma_sell_{self.base_nb_candles_sell.value}"] = ta.EMA(
-            dataframe, timeperiod=self.base_nb_candles_sell.value
-        )
+        # Create ALL EMA values for buy/sell param range (required for hyperopt parallel evaluation)
+        for val in self.base_nb_candles_buy.range:
+            dataframe[f"ma_buy_{val}"] = ta.EMA(dataframe, timeperiod=val)
+
+        for val in self.base_nb_candles_sell.range:
+            dataframe[f"ma_sell_{val}"] = ta.EMA(dataframe, timeperiod=val)
 
         dataframe["EWO"] = EWO(dataframe, self.fast_ewo, self.slow_ewo)
 
-        # RSI already calculated in parent class (line 72), skip duplicate
-        # Use custom RSI with specific timeperiod if needed
+        # RSI from parent class populate_indicators (avoid duplicate if already present)
         if "rsi" not in dataframe.columns:
             dataframe["rsi"] = ta.RSI(dataframe, timeperiod=14)
 
