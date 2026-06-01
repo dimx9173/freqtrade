@@ -73,8 +73,8 @@ done
 # 5. 驗證下載結果
 echo "---" | tee -a "$LOGFILE"
 echo "[5/5] Data verification:" | tee -a "$LOGFILE"
-SPOT_COUNT=$(ls user_data/data/bybit/*_USDT-5m.feather 2>/dev/null | wc -l)
-FUTURES_COUNT=$(ls user_data/data/bybit/*_USDT:USDT-5m.feather 2>/dev/null | wc -l)
+SPOT_COUNT=$(ls user_data/data/bybit/*_USDT-5m.feather 2>/dev/null | grep -v "futures" | wc -l)
+FUTURES_COUNT=$(ls user_data/data/bybit/futures/*_USDT_USDT-5m-futures.feather 2>/dev/null | wc -l)
 echo "  Spot 5m pairs: $SPOT_COUNT" | tee -a "$LOGFILE"
 echo "  Futures 5m pairs: $FUTURES_COUNT" | tee -a "$LOGFILE"
 
