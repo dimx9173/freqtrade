@@ -1,6 +1,6 @@
 {
   "ga_framework": {
-    "version": "1.0",
+    "version": "2.0",
     "description": "數學策略 GA 迭代框架設定模板",
     "default_settings": {
       "epochs": 500,
@@ -28,30 +28,47 @@
       "nsgaii_bb_rpb_tsl_bi": {
         "description": "BB_RPB_TSL_BI + NSGAII 優化",
         "timeframe": "5m",
+        "status": "active",
         "recommended_epochs": 1000,
         "recommended_loss": "ProfitDrawDownHyperOptLoss",
         "recommended_spaces": "buy sell roi stoploss"
       },
-      "MathCombo_Adaptive_v1": {
-        "description": "數學組合自適應策略",
-        "timeframe": "5m",
-        "recommended_epochs": 500,
-        "recommended_loss": "SortinoHyperOptLoss",
-        "recommended_spaces": "default"
-      },
-      "PolyReg_Adaptive_v1": {
-        "description": "多項式回歸自適應策略",
-        "timeframe": "5m",
+      "PolyReg_Adaptive_v2": {
+        "description": "多項式回歸自適應策略 v2 (修復版)",
+        "timeframe": "15m",
+        "status": "active",
         "recommended_epochs": 500,
         "recommended_loss": "SharpeHyperOptLoss",
-        "recommended_spaces": "default"
+        "recommended_spaces": "default",
+        "notes": "v1 已廢棄 (215 trades, -24.61%)。v2 修復: timeframe 15m, degree IntParameter, ATR optional, 雙模式支援"
+      },
+      "MultiTFPolyReg_v1": {
+        "description": "多時間框架多項式回歸策略 v1",
+        "timeframe": "5m",
+        "status": "planned",
+        "recommended_epochs": 500,
+        "recommended_loss": "SortinoHyperOptLoss",
+        "recommended_spaces": "default",
+        "notes": "基於數學理論: Wavelet MRA 多 TF, degree≤2, Ridge, BIC 選擇, 滾動窗口"
       },
       "Adaptive_Scalp_v2": {
-        "description": "ADX + BB + RSI 自適應策略",
-        "timeframe": "5m",
+        "description": "ADX + BB + RSI 自適應策略 v2",
+        "timeframe": "15m",
+        "status": "pending",
         "recommended_epochs": 500,
         "recommended_loss": "ProfitDrawDownHyperOptLoss",
-        "recommended_spaces": "buy sell"
+        "recommended_spaces": "buy sell",
+        "notes": "待建立 — Trend-Following Scalping, 僅在強趨勢市場交易"
+      }
+    },
+    "archived_strategies": {
+      "MathCombo_Adaptive_v1": {
+        "archived_date": "2026-05-21",
+        "reason": "Iteration #1: -0.55%, 129 trades. 負收益且過度交易，已封存。"
+      },
+      "PolyReg_Adaptive_v1": {
+        "archived_date": "2026-05-24",
+        "reason": "Iteration #1: -24.61%, 215 trades. timeframe 1h 與資料不匹配，已由 v2 取代。"
       }
     }
   }

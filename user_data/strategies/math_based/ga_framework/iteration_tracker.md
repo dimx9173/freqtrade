@@ -1,5 +1,7 @@
 # 數學策略 GA 迭代追蹤
 
+> 最後更新: 2026-05-29
+
 ## 迭代記錄格式
 
 每個策略的 GA 迭代應記錄：
@@ -19,6 +21,8 @@
 - **報告**: [連結]
 - **狀態**: ✅ 完成 / ⚠️ 待驗證 / ❌ 失敗
 ```
+
+---
 
 ## 當前迭代記錄
 
@@ -54,46 +58,15 @@
 
 ---
 
-### MathCombo_Adaptive_v1
+### PolyReg_Adaptive（活躍）
 
-#### Iteration #1
-- **日期**: 2026-05-21
-- **Session ID**: 20260521_013359
-- **結果**: 129 trades, -0.55%, 55.8% win rate
-- **狀態**: ❌ 已封存
-
-#### Iteration #2 (GA 優化 - Sortino)
-- **日期**: 2026-05-21
-- **Session ID**: 20260521_111110
-- **Epochs**: 500
-- **Loss Function**: SortinoHyperOptLoss
-- **Spaces**: buy
-- **結果**:
-  - 交易數: 19
-  - 總利潤: -0.72% (-7.151 USDT)
-  - 勝率: 42.1%
-  - 最大回撤: 0.91%
-  - Objective: 0.97827
-- **最佳參數**:
-  - window: 243.106
-  - dev_mult: 1.849
-  - zscore_threshold: 2.325
-  - adx_min: 29.779
-  - adx_max: 25.937
-- **Hyperopt檔**: `archive/math_based/strategy_MathCombo_Adaptive_v1_2026-05-21_11-11-10.fthypt`
-- **狀態**: ❌ 已封存
-
----
-
-### PolyReg_Adaptive_v1
-
-#### Iteration #1
+#### v1 Iteration #1
 - **日期**: 2026-05-21
 - **Session ID**: 20260521_013009
 - **結果**: 215 trades, -24.61%, 47.9% win rate
-- **狀態**: ❌ 需重新優化
+- **狀態**: ❌ v1 已廢棄 — 由 v2 取代
 
-#### Iteration #2 (v2 修復)
+#### v2 修復
 - **日期**: 2026-05-24
 - **問題**: timeframe 1h 與 15m backtest 不匹配；entry 條件過嚴 (ADX + ATR + channel break)；僅 mean-reversion 無 trend-following；degree 參數型別錯誤
 - **修復**: v2 版本
@@ -109,9 +82,39 @@
 
 ---
 
+### Adaptive_Scalp_v2
+
+- **狀態**: ⚠️ 待建立
+- **描述**: ADX + BB + RSI 自適應 Trend-Following Scalping (15m, 5x leverage)
+- **待辦**: 首次 GA 優化
+
+---
+
+### MultiTFPolyReg_v1
+
+- **狀態**: 📋 規劃中
+- **描述**: 多 TF 多項式回歸策略 (基於 Wavelet MRA 數學理論)
+- **數學基礎**: degree≤2, Ridge, BIC, 滾動窗口, 4×TF
+- **待辦**: 建立策略模板
+
+---
+
+## 已封存策略
+
+### MathCombo_Adaptive_v1 ❌
+- **封存日期**: 2026-05-21
+- **原因**: Iteration #1: 129 trades, -0.55%, 55.8% win rate — 負收益且過度交易
+- **Iteration #2 (GA, Sortino)**: 19 trades, -0.72%, 42.1% win rate — 同樣負收益
+  - 最佳參數: window=243.106, dev_mult=1.849, zscore_threshold=2.325
+  - Objective: 0.97827
+- **結論**: 策略設計有根本缺陷，不適合當前市場條件，永久封存
+
+---
+
 ## 待執行迭代
 
-- [x] MathCombo_Adaptive_v1 - ~~調整參數重新優化~~ → **已封存**
-- [ ] PolyReg_Adaptive_v2 - backtest 驗證
-- [ ] Adaptive_Scalp_v2 - 首次優化
+- [ ] PolyReg_Adaptive_v2 — backtest 驗證後進行 GA 優化
+- [ ] Adaptive_Scalp_v2 — 首次 GA 優化
+- [ ] MultiTFPolyReg_v1 — 建立策略模板
+- [x] ~~MathCombo_Adaptive_v1 重新優化~~ → 已封存
 - [ ] 確認 NSGAII +12.65% 原始數據來源

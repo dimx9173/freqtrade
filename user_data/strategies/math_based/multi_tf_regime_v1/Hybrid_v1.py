@@ -56,6 +56,7 @@ _sklearn_error_msg = ""
 try:
     from sklearn.linear_model import Ridge
     from sklearn.preprocessing import PolynomialFeatures, StandardScaler
+
     _sklearn_available = True
 except ImportError as e:
     _sklearn_error_msg = str(e)
@@ -82,26 +83,28 @@ class Hybrid_v1(IStrategy):
 
     # ── Basic Settings ─────────────────────────────────────────────
     timeframe: str = "15m"
-    can_short: bool = False          # Long only, like NASOS production
+    can_short: bool = False  # Long only, like NASOS production
     process_only_new_candles: bool = True
-    use_exit_signal: bool = True     # NASOS uses SMA_9 exit
+    use_exit_signal: bool = True  # NASOS uses SMA_9 exit
     use_custom_stoploss: bool = True
     startup_candle_count: int = 350  # covers ATR horizon + rolling windows
-    stoploss: float = -0.03         # base fallback
+    stoploss: float = -0.03  # base fallback
 
     # ── Exit / ROI (NASOS-style) ────────────────────────────────────
     minimal_roi: Dict[str, float] = {
-        "0": 0.03,    # 3% immediate target
-        "60": 0.02,   # 2% after 60m
+        "0": 0.03,  # 3% immediate target
+        "60": 0.02,  # 2% after 60m
         "180": 0.01,  # 1% after 180m
     }
     trailing_stop: bool = True
     trailing_stop_positive: float = 0.008
-    trailing_stop_positive_offset: float = 0.05  # Raised from 0.03 to 0.05 (wait longer before trailing activates)
+    trailing_stop_positive_offset: float = (
+        0.05  # Raised from 0.03 to 0.05 (wait longer before trailing activates)
+    )
     trailing_only_offset_is_reached: bool = True
 
     # ── Regime Thresholds (from MultiTF_RegimeDetector) ─────────────
-    ADX_RANGING_MAX: float = 20.0   # ADX < 20 = ranging
+    ADX_RANGING_MAX: float = 20.0  # ADX < 20 = ranging
     ADX_TRENDING_MIN: float = 25.0  # ADX > 25 = trending
     # 20–25 = transition
 
@@ -117,16 +120,16 @@ class Hybrid_v1(IStrategy):
     #   - Current fix: ewo_high=1.5, rsi_fast_buy=65
     buy_params = {
         "base_nb_candles_buy": 20,
-        "ewo_low": -1.5,       # ranging: oversold bounce threshold
-        "ewo_high": 2.5,       # trending: momentum confirmation
-        "ewo_high_2": 3.5,     # trending: stronger momentum signal
-        "low_offset": 1.05,     # price < MA * 1.05 (pullback filter)
+        "ewo_low": -1.5,  # ranging: oversold bounce threshold
+        "ewo_high": 2.5,  # trending: momentum confirmation
+        "ewo_high_2": 3.5,  # trending: stronger momentum signal
+        "low_offset": 1.05,  # price < MA * 1.05 (pullback filter)
         "low_offset_2": 1.15,  # looser pullback for ewo_high_2
-        "high_offset": 1.01,    # exit MA filter (already above MA)
+        "high_offset": 1.01,  # exit MA filter (already above MA)
         "lookback_candles": 7,
         "profit_threshold": 1.10,
         "rsi_buy": 70,
-        "rsi_fast_buy": 70,     # raised from 50 - was blocking most EWO signals
+        "rsi_fast_buy": 70,  # raised from 50 - was blocking most EWO signals
     }
     # Sell params
     sell_params = {
@@ -137,8 +140,10 @@ class Hybrid_v1(IStrategy):
 
     # ── Hyperoptable Parameters ─────────────────────────────────────
     from freqtrade.strategy import (
-        DecimalParameter, IntParameter,
+        DecimalParameter,
+        IntParameter,
     )
+
     base_nb_candles_buy = IntParameter(
         2, 20, default=buy_params["base_nb_candles_buy"], space="buy", optimize=True
     )
@@ -172,9 +177,7 @@ class Hybrid_v1(IStrategy):
     profit_threshold = DecimalParameter(
         1.0, 1.1, default=buy_params["profit_threshold"], space="buy", optimize=True
     )
-    rsi_buy = IntParameter(
-        40, 80, default=buy_params["rsi_buy"], space="buy", optimize=True
-    )
+    rsi_buy = IntParameter(40, 80, default=buy_params["rsi_buy"], space="buy", optimize=True)
     rsi_fast_buy = IntParameter(
         30, 70, default=buy_params["rsi_fast_buy"], space="buy", optimize=True
     )
@@ -255,9 +258,7 @@ class Hybrid_v1(IStrategy):
 
         for i in range(self.startup_candle_count, n):
             if i - last_train_idx >= self.VOL_RETRAIN_INTERVAL:
-                new_model = self._train_vol_model(
-                    vol_features, current_atr_pct.values, i
-                )
+                new_model = self._train_vol_model(vol_features, current_atr_pct.values, i)
                 if new_model is not None:
                     current_model = new_model
                     last_train_idx = i
@@ -294,9 +295,7 @@ class Hybrid_v1(IStrategy):
     # =================================================================
     #  Multi-TF Regime Detection
     # =================================================================
-    def _detect_regime_multitf(
-        self, dataframe: DataFrame, metadata: dict
-    ) -> DataFrame:
+    def _detect_regime_multitf(self, dataframe: DataFrame, metadata: dict) -> DataFrame:
         """
         Detect regime using multi-TF ADX consensus (from MultiTF_RegimeDetector).
         Stores adx_15m, adx_1h, adx_4h and regime in dataframe.
@@ -374,9 +373,7 @@ class Hybrid_v1(IStrategy):
         f[f"{tf_name}_adx"] = ta.ADX(df, timeperiod=14) / 100.0
         return f
 
-    def _merge_vol_features(
-        self, dataframe: DataFrame, metadata: dict
-    ) -> pd.DataFrame:
+    def _merge_vol_features(self, dataframe: DataFrame, metadata: dict) -> pd.DataFrame:
         """Merge multi-TF volatility features for Ridge training."""
         pair = metadata["pair"]
         dfs = {"15m": dataframe}
@@ -412,7 +409,9 @@ class Hybrid_v1(IStrategy):
             return None
 
         X_train = vol_features.iloc[train_start:train_end].values
-        y_train = target_atr[train_start + self.VOL_FORECAST_HORIZON:train_end + self.VOL_FORECAST_HORIZON]
+        y_train = target_atr[
+            train_start + self.VOL_FORECAST_HORIZON : train_end + self.VOL_FORECAST_HORIZON
+        ]
 
         valid = ~(np.isnan(X_train).any(axis=1) | np.isnan(y_train))
         if valid.sum() < 30:
@@ -461,10 +460,7 @@ class Hybrid_v1(IStrategy):
             & (dataframe["volume"] > 0)
             & (
                 dataframe["close"]
-                < (
-                    dataframe[f"ma_sell_{self.base_nb_candles_sell.value}"]
-                    * self.high_offset.value
-                )
+                < (dataframe[f"ma_sell_{self.base_nb_candles_sell.value}"] * self.high_offset.value)
             )
             & (dataframe["rsi"] < 25)  # Very oversold
         )
@@ -483,10 +479,7 @@ class Hybrid_v1(IStrategy):
             & (dataframe["volume"] > 0)
             & (
                 dataframe["close"]
-                < (
-                    dataframe[f"ma_sell_{self.base_nb_candles_sell.value}"]
-                    * self.high_offset.value
-                )
+                < (dataframe[f"ma_sell_{self.base_nb_candles_sell.value}"] * self.high_offset.value)
             )
             # NOTE: rsi<44 hardcoded filter was REMOVED - it was destroying signal quality
             # Analysis showed: with rsi<44: 0 signals; without: 20 signals with 65% WR
@@ -505,10 +498,7 @@ class Hybrid_v1(IStrategy):
             & (dataframe["volume"] > 0)
             & (
                 dataframe["close"]
-                < (
-                    dataframe[f"ma_sell_{self.base_nb_candles_sell.value}"]
-                    * self.high_offset.value
-                )
+                < (dataframe[f"ma_sell_{self.base_nb_candles_sell.value}"] * self.high_offset.value)
             )
             & (dataframe["rsi"] < 25)
         )
@@ -536,24 +526,14 @@ class Hybrid_v1(IStrategy):
 
         # ── SMA_9 exit (NASOS primary exit) ─────────────────────────
         # Exit when close > SMA_9 AND close > ma_sell * high_offset_2
-        sma_exit = (
-            (dataframe["close"] > dataframe["sma_9"])
-            & (
-                dataframe["close"]
-                > (
-                    dataframe[f"ma_sell_{self.base_nb_candles_sell.value}"]
-                    * self.high_offset_2.value
-                )
-            )
+        sma_exit = (dataframe["close"] > dataframe["sma_9"]) & (
+            dataframe["close"]
+            > (dataframe[f"ma_sell_{self.base_nb_candles_sell.value}"] * self.high_offset_2.value)
         )
 
         # ── High-offset trailing exit ────────────────────────────────
-        high_offset_exit = (
-            dataframe["close"]
-            > (
-                dataframe[f"ma_sell_{self.base_nb_candles_sell.value}"]
-                * self.high_offset_2.value
-            )
+        high_offset_exit = dataframe["close"] > (
+            dataframe[f"ma_sell_{self.base_nb_candles_sell.value}"] * self.high_offset_2.value
         )
 
         dataframe.loc[sma_exit, "exit_long"] = 1
@@ -576,11 +556,11 @@ class Hybrid_v1(IStrategy):
         """
         Dynamic stop-loss based on pred_ATR.
         Stop = max(-1.5%, -3 * pred_ATR_pct)
-        
+
         With BTC 15m ATR% median ≈ 0.27%, pred_ATR is typically 0.003-0.005.
         -3 × 0.003 = -0.9%  (reasonable for trending entry)
         -3 × 0.005 = -1.5%  (minimum floor kicks in)
-        
+
         This replaces the old formula which used:
         max(-3%, -2 * pred_ATR_pct)
         That was too tight — pred_ATR clipped at 0.001 gave only -0.2% stoploss,
@@ -646,9 +626,9 @@ class Hybrid_v1(IStrategy):
         last_candle = dataframe.iloc[-1]
 
         if sell_reason in ["sell_signal"]:
-            if (
-                last_candle["hma_50"] * 1.149 > last_candle["ema_100"]
-            ) and (last_candle["close"] < last_candle["ema_100"] * 0.951):
+            if (last_candle["hma_50"] * 1.149 > last_candle["ema_100"]) and (
+                last_candle["close"] < last_candle["ema_100"] * 0.951
+            ):
                 return False
 
         try:

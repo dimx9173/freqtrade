@@ -49,6 +49,7 @@ _sklearn_error_msg = ""
 try:
     from sklearn.linear_model import Ridge
     from sklearn.preprocessing import PolynomialFeatures, StandardScaler
+
     _sklearn_available = True
 except ImportError as e:
     _sklearn_error_msg = str(e)
@@ -90,8 +91,8 @@ class Hybrid_v2(IStrategy):
 
     # ── Exit / ROI (realistic for 15m futures) ────────────────────────
     minimal_roi: Dict[str, float] = {
-        "0": 0.03,    # 3% immediate target
-        "60": 0.02,   # 2% after 60m
+        "0": 0.03,  # 3% immediate target
+        "60": 0.02,  # 2% after 60m
         "180": 0.01,  # 1% after 180m
     }
 
@@ -109,7 +110,7 @@ class Hybrid_v2(IStrategy):
     }
 
     # ── Regime Thresholds ─────────────────────────────────────────────
-    ADX_RANGING_MAX: float = 20.0   # ADX < 20 = ranging
+    ADX_RANGING_MAX: float = 20.0  # ADX < 20 = ranging
     ADX_TRENDING_MIN: float = 25.0  # ADX > 25 = trending
     # 20–25 = transition
 
@@ -161,29 +162,25 @@ class Hybrid_v2(IStrategy):
         # ── 2. Bollinger Bands (standard: period=20, std=2) ───────────
         for p in range(10, 31):
             for s in [1.5, 2.0, 2.5, 3.0]:
-                dataframe[f"bb_lower_{p}_{s}"] = (
-                    ta.SMA(dataframe, timeperiod=p)
-                    - s * ta.STDDEV(dataframe, timeperiod=p)
+                dataframe[f"bb_lower_{p}_{s}"] = ta.SMA(dataframe, timeperiod=p) - s * ta.STDDEV(
+                    dataframe, timeperiod=p
                 )
                 dataframe[f"bb_middle_{p}_{s}"] = ta.SMA(dataframe, timeperiod=p)
-                dataframe[f"bb_upper_{p}_{s}"] = (
-                    ta.SMA(dataframe, timeperiod=p)
-                    + s * ta.STDDEV(dataframe, timeperiod=p)
+                dataframe[f"bb_upper_{p}_{s}"] = ta.SMA(dataframe, timeperiod=p) + s * ta.STDDEV(
+                    dataframe, timeperiod=p
                 )
 
         # Current BB (default 20, 2.0)
-        dataframe["bb_lowerband"] = (
-            ta.SMA(dataframe, timeperiod=20)
-            - 2.0 * ta.STDDEV(dataframe, timeperiod=20)
+        dataframe["bb_lowerband"] = ta.SMA(dataframe, timeperiod=20) - 2.0 * ta.STDDEV(
+            dataframe, timeperiod=20
         )
         dataframe["bb_middleband"] = ta.SMA(dataframe, timeperiod=20)
-        dataframe["bb_upperband"] = (
-            ta.SMA(dataframe, timeperiod=20)
-            + 2.0 * ta.STDDEV(dataframe, timeperiod=20)
+        dataframe["bb_upperband"] = ta.SMA(dataframe, timeperiod=20) + 2.0 * ta.STDDEV(
+            dataframe, timeperiod=20
         )
-        dataframe["bb_width"] = (
-            dataframe["bb_upperband"] - dataframe["bb_lowerband"]
-        ) / dataframe["bb_middleband"]
+        dataframe["bb_width"] = (dataframe["bb_upperband"] - dataframe["bb_lowerband"]) / dataframe[
+            "bb_middleband"
+        ]
 
         # ── 3. RSI ─────────────────────────────────────────────────────
         dataframe["rsi"] = ta.RSI(dataframe, timeperiod=14)
@@ -227,9 +224,7 @@ class Hybrid_v2(IStrategy):
 
         for i in range(self.startup_candle_count, n):
             if i - last_train_idx >= self.VOL_RETRAIN_INTERVAL:
-                new_model = self._train_vol_model(
-                    vol_features, current_atr_pct, i
-                )
+                new_model = self._train_vol_model(vol_features, current_atr_pct, i)
                 if new_model is not None:
                     current_model = new_model
                     last_train_idx = i
@@ -252,7 +247,9 @@ class Hybrid_v2(IStrategy):
                     continue
 
         pred_series = pd.Series(pred_atr_arr, index=dataframe.index)
-        dataframe["pred_atr"] = pred_series.ffill().fillna(pd.Series(current_atr_pct, index=dataframe.index))
+        dataframe["pred_atr"] = pred_series.ffill().fillna(
+            pd.Series(current_atr_pct, index=dataframe.index)
+        )
 
         self._vol_model_cache[pair] = {
             "model": current_model,
@@ -265,9 +262,7 @@ class Hybrid_v2(IStrategy):
     # =================================================================
     #  Multi-TF Regime Detection (from Hybrid_v1)
     # =================================================================
-    def _detect_regime_multitf(
-        self, dataframe: DataFrame, metadata: dict
-    ) -> DataFrame:
+    def _detect_regime_multitf(self, dataframe: DataFrame, metadata: dict) -> DataFrame:
         """
         Detect regime using multi-TF ADX consensus.
         Stores adx_15m, adx_1h, adx_4h and regime in dataframe.
@@ -354,9 +349,7 @@ class Hybrid_v2(IStrategy):
         f[f"{tf_name}_adx"] = ta.ADX(df, timeperiod=14) / 100.0
         return f
 
-    def _merge_vol_features(
-        self, dataframe: DataFrame, metadata: dict
-    ) -> pd.DataFrame:
+    def _merge_vol_features(self, dataframe: DataFrame, metadata: dict) -> pd.DataFrame:
         """Merge multi-TF volatility features for Ridge training."""
         pair = metadata["pair"]
         dfs = {"15m": dataframe}
@@ -393,7 +386,7 @@ class Hybrid_v2(IStrategy):
 
         X_train = vol_features.iloc[train_start:train_end].values
         y_train = target_atr[
-            train_start + self.VOL_FORECAST_HORIZON: train_end + self.VOL_FORECAST_HORIZON
+            train_start + self.VOL_FORECAST_HORIZON : train_end + self.VOL_FORECAST_HORIZON
         ]
 
         valid = ~(np.isnan(X_train).any(axis=1) | np.isnan(y_train))
@@ -436,9 +429,7 @@ class Hybrid_v2(IStrategy):
 
         entry = (
             (dataframe["regime"] == 2)  # Trending market only
-            & (
-                dataframe["close"] < dataframe["bb_lowerband"]
-            )  # BB lower touch (bounce setup)
+            & (dataframe["close"] < dataframe["bb_lowerband"])  # BB lower touch (bounce setup)
             & (dataframe["rsi"] < self.rsi_entry.value)  # RSI oversold
             & (dataframe["volume"] > dataframe["volume_ma"])  # Volume confirmation
             & (dataframe["volume_ma"] > 0)
@@ -456,11 +447,11 @@ class Hybrid_v2(IStrategy):
     def populate_exit_trend(self, dataframe: DataFrame, metadata: dict) -> DataFrame:
         """
         Exit: BB upper band touch OR RSI overbought + BB middle band cross.
-        
+
         Key fix: BB middle cross alone is too aggressive as an exit after BB lower
         entry (immediate exits destroying otherwise valid trades). Require RSI overbought
         (rsi > 60) to confirm momentum before allowing middle band exit.
-        
+
         BB upper band touch still triggers immediately (take profit at upper band).
         """
         dataframe["exit_long"] = 0
