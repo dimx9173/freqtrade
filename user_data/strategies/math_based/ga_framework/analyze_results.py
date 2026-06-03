@@ -20,11 +20,18 @@ import sys
 from datetime import datetime
 from pathlib import Path
 
+# Allow import of constraint_validator from same directory
+sys.path.insert(0, str(Path(__file__).parent))
+from constraint_validator import (  # noqa: E402
+    print_ga_params_validation_report,
+    validate_ga_params,
+)
+
 
 # ---- 路徑設定 ----
 # 基於 script 位置的相對路徑（不再硬編碼 HOME）
-SCRIPT_DIR = Path(__file__).resolve().parent           # .../math_based/ga_framework
-MATH_BASED_DIR = SCRIPT_DIR.parent                      # .../math_based
+SCRIPT_DIR = Path(__file__).resolve().parent  # .../math_based/ga_framework
+MATH_BASED_DIR = SCRIPT_DIR.parent  # .../math_based
 USER_DATA_DIR = MATH_BASED_DIR.parent.parent if MATH_BASED_DIR.name == "math_based" else None
 FREQTRADE_ROOT = USER_DATA_DIR.parent if USER_DATA_DIR else None
 
@@ -32,8 +39,12 @@ FREQTRADE_ROOT = USER_DATA_DIR.parent if USER_DATA_DIR else None
 _venv_bin = FREQTRADE_ROOT / ".venv/bin/freqtrade" if FREQTRADE_ROOT else None
 FREQTRADE_BIN = str(_venv_bin) if _venv_bin and _venv_bin.exists() else "freqtrade"
 
-STRATEGY_PATH = str(MATH_BASED_DIR) if MATH_BASED_DIR.exists() else str(
-    Path(os.environ.get("HOME", "/home/brian")) / "freqtrade/user_data/strategies/math_based"
+STRATEGY_PATH = (
+    str(MATH_BASED_DIR)
+    if MATH_BASED_DIR.exists()
+    else str(
+        Path(os.environ.get("HOME", "/home/brian")) / "freqtrade/user_data/strategies/math_based"
+    )
 )
 GA_FRAMEWORK_DIR = SCRIPT_DIR
 TRACKER_FILE = GA_FRAMEWORK_DIR / "iteration_tracker.md"
@@ -41,70 +52,68 @@ TRACKER_FILE = GA_FRAMEWORK_DIR / "iteration_tracker.md"
 # hyperopt_results 目錄
 _home = Path(os.environ.get("HOME", "/home/brian"))
 HYPEROPT_RESULTS_DIR = (
-    USER_DATA_DIR / "hyperopt_results" if USER_DATA_DIR and (USER_DATA_DIR / "hyperopt_results").exists()
+    USER_DATA_DIR / "hyperopt_results"
+    if USER_DATA_DIR and (USER_DATA_DIR / "hyperopt_results").exists()
     else _home / "freqtrade/user_data/hyperopt_results"
 )
 
 
 def run_hyperopt_show(strategy, hyperopt_filename=None, best=True, print_json=True):
     """執行 freqtrade hyperopt-show 並返回 JSON 輸出"""
-    cmd = [
-        FREQTRADE_BIN, "hyperopt-show",
-        "--strategy-path", STRATEGY_PATH,
+    cmd_base = [
+        FREQTRADE_BIN,
+        "hyperopt-show",
     ]
 
-    if best:
-        cmd.append("--best")
     if print_json:
-        cmd.append("--print-json")
+        cmd_base.append("--print-json")
     if hyperopt_filename:
-        cmd.append("--hyperopt-filename")
-        cmd.append(hyperopt_filename)
+        # freqtrade 只接受檔名（not absolute path），自動取 basename
+        from pathlib import Path as _P
+        cmd_base.append("--hyperopt-filename")
+        cmd_base.append(_P(hyperopt_filename).name)
 
-    # 嘗試使用 --strategy (某些版本的 freqtrade 需要)
-    # 如果不需要就省略，hyperopt-show 會自動從結果檔偵測
+    # NSGAIII 沒有單一 best epoch，所以 fallback chain:
+    #   1. --best        (ProfitDrawDown 等單目標)
+    #   2. --index 1     (NSGAIII 取第一個，freqtrade 要求 non-zero)
+    #   3. --index 2
+    best_attempts: list[tuple[list[str], str]] = [
+        (["--best"], "single objective best"),
+        (["--index", "1"], "NSGAIII earliest (1-indexed)"),
+        (["--index", "2"], "NSGAIII 2nd"),
+    ]
 
-    try:
-        result = subprocess.run(
-            cmd,
-            capture_output=True,
-            text=True,
-            timeout=120,
-            cwd=str(FREQTRADE_ROOT) if FREQTRADE_ROOT else str(_home / "freqtrade"),
-        )
-
-        if result.returncode != 0:
-            # 嘗試加上 --strategy
-            cmd2 = cmd + ["--strategy", strategy]
+    for extra_args, desc in best_attempts:
+        cmd = cmd_base + extra_args
+        try:
             result = subprocess.run(
-                cmd2,
+                cmd,
                 capture_output=True,
                 text=True,
                 timeout=120,
                 cwd=str(FREQTRADE_ROOT) if FREQTRADE_ROOT else str(_home / "freqtrade"),
             )
 
-        if result.returncode != 0:
-            print(f"⚠️  hyperopt-show 失敗: {result.stderr[:500]}", file=sys.stderr)
-            return None
+            if result.returncode == 0:
+                # --print-json 輸出混在 verbose 報告中，用 regex 提取
+                import re as _re
+                output = result.stdout
+                # 找 {"minimal_roi":...} 開頭的 JSON 物件（greedy 確保配對所有 { }）
+                m = _re.search(r'\{[^{}]*"minimal_roi"[^{}]*\{[^{}]*\}[^{}]*\}', output)
+                if not m:
+                    # fallback: 找 {...trailing_stop...} 整行 JSON
+                    m = _re.search(r'\{[^{}]*"trailing_stop"[^{}]*\}', output)
+                if m:
+                    try:
+                        return json.loads(m.group(0))
+                    except json.JSONDecodeError:
+                        continue
+        except subprocess.TimeoutExpired:
+            continue
 
-        # 過濾 stderr 中的 warning，只取 stdout JSON
-        output = result.stdout.strip()
-        if not output:
-            return None
-
-        return json.loads(output)
-
-    except subprocess.TimeoutExpired:
-        print("⚠️  hyperopt-show 超時", file=sys.stderr)
-        return None
-    except json.JSONDecodeError as e:
-        print(f"⚠️  JSON 解析失敗: {e}", file=sys.stderr)
-        print(f"   stdout 前 500 字元: {result.stdout[:500]}", file=sys.stderr)
-        return None
-    except Exception as e:
-        print(f"⚠️  錯誤: {e}", file=sys.stderr)
-        return None
+    print(f"⚠️  hyperopt-show 失敗（已嘗試 {len(best_attempts)} 種 best 模式）",
+          file=sys.stderr)
+    return None
 
 
 def find_latest_hyperopt_file(strategy_name):
@@ -183,8 +192,17 @@ def extract_metrics_from_json(data):
         if not metrics["best_parameters"]:
             # 嘗試直接從 epoch 取得
             for k, v in epoch.items():
-                if k not in ("results", "result", "loss", "objective", "params", "params_details",
-                             "epoch", "is_initial_point", "is_best"):
+                if k not in (
+                    "results",
+                    "result",
+                    "loss",
+                    "objective",
+                    "params",
+                    "params_details",
+                    "epoch",
+                    "is_initial_point",
+                    "is_best",
+                ):
                     if isinstance(v, (int, float, str)):
                         metrics["best_parameters"][k] = v
 
@@ -250,16 +268,16 @@ def append_to_tracker(strategy, metrics, compare_mode=False):
     entry = f"""
 ### {strategy} - Analysis @ {date_str}
 - **日期**: {date_str}
-- **分析時間**: {now.strftime('%H:%M:%S')}
+- **分析時間**: {now.strftime("%H:%M:%S")}
 - **結果**:
-  - 總利潤: {format_metric(metrics.get('total_profit_pct'), '.2%')}
-  - 交易數: {format_metric(metrics.get('trades'), 'd', 'N/A')}
-  - 勝率: {format_metric(metrics.get('win_rate'), '.1%')}
-  - 最大回撤: {format_metric(metrics.get('max_drawdown'), '.2%')}
-  - Sharpe: {format_metric(metrics.get('sharpe_ratio'), '.3f')}
-  - Sortino: {format_metric(metrics.get('sortino_ratio'), '.3f')}
-  - Profit Factor: {format_metric(metrics.get('profit_factor'), '.3f')}
-  - Objective: {format_metric(metrics.get('objective'), '.5f')}
+  - 總利潤: {format_metric(metrics.get("total_profit_pct"), ".2%")}
+  - 交易數: {format_metric(metrics.get("trades"), "d", "N/A")}
+  - 勝率: {format_metric(metrics.get("win_rate"), ".1%")}
+  - 最大回撤: {format_metric(metrics.get("max_drawdown"), ".2%")}
+  - Sharpe: {format_metric(metrics.get("sharpe_ratio"), ".3f")}
+  - Sortino: {format_metric(metrics.get("sortino_ratio"), ".3f")}
+  - Profit Factor: {format_metric(metrics.get("profit_factor"), ".3f")}
+  - Objective: {format_metric(metrics.get("objective"), ".5f")}
 """
 
     if metrics.get("best_parameters"):
@@ -322,13 +340,15 @@ def main():
     )
 
     parser.add_argument(
-        "--strategy", "-s",
+        "--strategy",
+        "-s",
         type=str,
         required=True,
         help="策略名稱 (如 PolyReg_Adaptive_v2)",
     )
     parser.add_argument(
-        "--compare", "-c",
+        "--compare",
+        "-c",
         action="store_true",
         help="啟用跨迭代比較模式",
     )
@@ -388,6 +408,22 @@ def main():
 
     # 提取指標
     metrics = extract_metrics_from_json(data)
+
+    # ── Freqtrade config 約束驗證 (2026-06-03 新增) ─────────────────
+    # 防止 GA 找到 infeasible 參數 (如 trailing offset <= positive)
+    if metrics.get("best_parameters"):
+        validation = validate_ga_params(
+            metrics["best_parameters"], verbose=False
+        )
+        all_passed = print_ga_params_validation_report(
+            strategy, validation, verbose=False
+        )
+        if not all_passed:
+            print()
+            print(
+                "⚠️  警告: GA 找到的參數不符合 freqtrade config 約束，"
+                "deploy 前需先修正！"
+            )
 
     if args.json:
         print(json.dumps(metrics, indent=2, default=str))

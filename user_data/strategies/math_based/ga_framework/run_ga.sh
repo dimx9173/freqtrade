@@ -355,6 +355,26 @@ END_TIME=$(date)
 } >> "$ITERATION_LOG"
 
 echo ""
+# ---- 自動 Freqtrade Config 驗證 (LAW-07..09) (2026-06-03 新增) ----
+# 防止 GA 找到 infeasible 參數（如 trailing_stop_positive_offset < positive）
+if [ $EXIT_CODE -eq 0 ]; then
+    echo "🔍 執行 Freqtrade Config 驗證 (LAW-07..09)..."
+    if [ -n "$HYPEROPT_FILENAME" ]; then
+        VALIDATION_FILE="$HYPEROPT_FILENAME"
+    else
+        VALIDATION_FILE=$(ls -t /home/brian/freqtrade/user_data/hyperopt_results/*${STRATEGY}*.fthypt 2>/dev/null | head -1)
+    fi
+    if [ -n "$VALIDATION_FILE" ]; then
+        python3 "$SCRIPT_DIR/analyze_results.py" \
+            --strategy="$STRATEGY" \
+            --hyperopt-filename="$VALIDATION_FILE" \
+            --no-append 2>&1 | grep -E "LAW-|✅|🔴|⚠️  警告|所有.*通過" | head -20
+    else
+        echo "⚠️  找不到 hyperopt 結果檔案，跳過驗證"
+    fi
+    echo ""
+fi
+
 if [ $EXIT_CODE -eq 0 ]; then
     echo -e "${GREEN}✅ GA 迭代完成${NC}"
 else
