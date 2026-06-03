@@ -1,6 +1,6 @@
 # 數學策略 GA 迭代追蹤
 
-> 最後更新: 2026-05-29
+> 最後更新: 2026-06-03（補 2026-06-01 session 4 個 task）
 
 ## 迭代記錄格式
 
@@ -82,8 +82,57 @@
 
 ---
 
-### Adaptive_Scalp_v2
+### Hybrid_v3（活躍）— 2026-06-01 session 重大突破
 
+#### Iteration #1 (Regime-guided 雙模式架構驗證)
+- **日期**: 2026-06-01
+- **Session ID**: 20260601_140616
+- **目標**: 驗證 regime-guided 雙模式進場（trending: EMA+MACD / ranging: RSI+BB）vs 原版 ADX 單模式
+- **結果**:
+  - 1166 trades
+  - 勝率 **85.2%** (原版 12.2%)
+  - Max DD 5.75% (原版 94.97%)
+  - **總利潤 -3.98%** (原版 -94.96%) — **架構勝 30×**
+- **核心洞察**: 純 Regime + TA 進場是災難；Regime + 雙模式進場接近獲利
+- **報告**: `user_data/reports/Hybrid_v3_15m_backtest_20260601.md`
+- **狀態**: ✅ 架構突破驗證完成
+
+#### Iteration #2 (GA 50 trials, 優化 ROI/SL/Trailing)
+- **日期**: 2026-06-01
+- **Loss Function**: ProfitDrawDownHyperOptLoss
+- **Spaces**: roi stoploss trailing
+- **Epochs**: 50
+- **結果**:
+  - 674 trades, WR 64.8%, 利潤 0.00%, Max DD 13.26%
+  - 最佳 Loss: 115.499
+  - 找到「不賠」參數集，但**打平非獲利**
+- **最佳參數**:
+  - ROI: 50min 21.6% / 131min 3% / 164min 1.9%
+  - Stoploss: -2.6%
+  - Trailing: 10.7% 觸發, 0.1% 偏移, 立即啟用
+- **報告**: `user_data/strategies/math_based/ga_framework/reports/Hybrid_v3_GA_results_20260601.md`
+- **狀態**: ⚠️ 進場邏輯是下一個瓶頸（架構 > 參數）
+
+---
+
+### MultiTF_RegimeDetector_v1 (15m × 10 幣種) — ❌ 失敗教訓
+
+#### Iteration #C (多幣種擴展實驗)
+- **日期**: 2026-06-01
+- **嘗試**: 將 BTC-only 優化的策略擴展到 10 幣種
+- **結果**:
+  - 5185 trades
+  - **總利潤 -94.96%** (帳戶歸零)
+  - 勝率 12.2%
+  - Max DD 94.97%
+  - 連虧 65 次
+- **報告**: `user_data/reports/MultiTF_RegimeDetector_v1_15m_backtest_20260601.md`
+- **結論**: ❌ **不要盲目擴展幣種** — 單幣種優化策略不能套用多幣種
+- **狀態**: 維持 BTC-only 限制
+
+---
+
+### Adaptive_Scalp_v2
 - **狀態**: ⚠️ 待建立
 - **描述**: ADX + BB + RSI 自適應 Trend-Following Scalping (15m, 5x leverage)
 - **待辦**: 首次 GA 優化
@@ -112,9 +161,13 @@
 ---
 
 ## 待執行迭代
-
+## 待執行迭代
+- [ ] **Hybrid_v3 套用 GA 參數 + 整合 BB_RPB 進場邏輯**（基線 +6.22% 已驗證）— 🔴 高優先
+- [ ] Hybrid_v3 GA 50→500 epochs 進階收斂
+- [ ] Hybrid_v3 buy/sell space 擴展（自定義 IntParameter/DecimalParameter）
 - [ ] PolyReg_Adaptive_v2 — backtest 驗證後進行 GA 優化
 - [ ] Adaptive_Scalp_v2 — 首次 GA 優化
 - [ ] MultiTFPolyReg_v1 — 建立策略模板
 - [x] ~~MathCombo_Adaptive_v1 重新優化~~ → 已封存
+- [x] ~~MultiTF_RegimeDetector_v1 多幣種擴展~~ → 維持 BTC-only
 - [ ] 確認 NSGAII +12.65% 原始數據來源
