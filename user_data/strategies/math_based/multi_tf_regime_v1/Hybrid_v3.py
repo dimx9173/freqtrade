@@ -40,13 +40,90 @@ import warnings
 import numpy as np
 import pandas as pd
 import talib.abstract as ta
-from pandas import DataFrame
+from pandas import DataFrame, Series
+from functools import reduce
+
+import freqtrade.vendor.qtpylib.indicators as qtpylib
+import pandas_ta as pta
+from technical.indicators import RMI
 
 from freqtrade.persistence import Trade
-from freqtrade.strategy import IStrategy
+from freqtrade.strategy import (
+    IStrategy,
+    IntParameter,
+    DecimalParameter,
+    CategoricalParameter,
+    merge_informative_pair,
+    stoploss_from_open,
+)
 
 
 logger = logging.getLogger(__name__)
+
+
+# ─────────────────────────────────────────────────────────────────────
+# Helper functions imported from BB_RPB_TSL_BI (NFI next gen family)
+# ─────────────────────────────────────────────────────────────────────
+def ha_typical_price(bars: DataFrame) -> Series:
+    """Heikin-Ashi typical price."""
+    res = (bars["ha_high"] + bars["ha_low"] + bars["ha_close"]) / 3.0
+    return Series(index=bars.index, data=res)
+
+
+def EWO(dataframe: DataFrame, ema_length: int = 5, ema2_length: int = 35) -> Series:
+    """Elliott Wave Oscillator (EWO) = (EMA_short - EMA_long) / low * 100."""
+    df = dataframe.copy()
+    ema1 = ta.EMA(df, timeperiod=ema_length)
+    ema2 = ta.EMA(df, timeperiod=ema2_length)
+    emadif = (ema1 - ema2) / df["low"] * 100
+    return emadif
+
+
+def williams_r(dataframe: DataFrame, period: int = 14) -> Series:
+    """Williams %R oscillator."""
+    highest_high = dataframe["high"].rolling(center=False, window=period).max()
+    lowest_low = dataframe["low"].rolling(center=False, window=period).min()
+    WR = Series(
+        (highest_high - dataframe["close"]) / (highest_high - lowest_low),
+        name=f"{period} Williams %R",
+    )
+    return WR * -100
+
+
+def heikinashi_safe(bars: DataFrame) -> DataFrame:
+    """
+    Heikin-Ashi transformation that works on both integer and
+    datetime-indexed DataFrames.
+
+    The stock `qtpylib.heikinashi` uses `bars.at[0, ...]` which raises
+    KeyError on a datetime index. We compute the four HA series with
+    vectorised numpy arrays and re-attach them to the original index.
+    """
+    if len(bars) == 0:
+        return bars.copy()
+
+    o = bars["open"].to_numpy(dtype=float)
+    h = bars["high"].to_numpy(dtype=float)
+    l = bars["low"].to_numpy(dtype=float)
+    c = bars["close"].to_numpy(dtype=float)
+
+    ha_close = (o + h + l + c) / 4.0
+    ha_open = np.empty_like(ha_close)
+    ha_open[0] = (o[0] + c[0]) / 2.0
+    for i in range(1, len(ha_close)):
+        ha_open[i] = (ha_open[i - 1] + ha_close[i - 1]) / 2.0
+    ha_high = np.maximum.reduce([h, ha_open, ha_close])
+    ha_low = np.minimum.reduce([l, ha_open, ha_close])
+
+    return DataFrame(
+        {
+            "open": ha_open,
+            "high": ha_high,
+            "low": ha_low,
+            "close": ha_close,
+        },
+        index=bars.index,
+    )
 
 # ─────────────────────────────────────────────────────────────────────
 # Lazy sklearn import (avoid hard crash without sklearn)
@@ -98,19 +175,21 @@ class Hybrid_v3(IStrategy):
     # Best Loss: 115.499 (ProfitDrawDownHyperOptLoss)
     # Backtest: 674 trades, 64.8% WR, 0.00% profit, 13.26% max DD
     minimal_roi: dict[str, float] = {
-        "0": 0.216,    # GA: 21.6% within first 50min (high initial target)
-        "50": 0.03,    # GA: 3% after 50min
+        "0": 0.216,  # GA: 21.6% within first 50min (high initial target)
+        "50": 0.03,  # GA: 3% after 50min
         "131": 0.019,  # GA: 1.9% after 131min
-        "164": 0.0,    # No ROI after 164min
+        "164": 0.0,  # No ROI after 164min
     }
 
     # GA-optimized stoploss
     stoploss: float = -0.026  # GA: -2.6% (was -0.99 to let custom_stoploss dominate)
 
     # GA-optimized trailing (enabled, aggressive)
+    # NOTE: GA reported offset=0.001 but freqtrade requires offset > positive.
+    # Adjusted to 0.12 (positive 0.107 + 1.3% buffer) for feasibility.
     trailing_stop: bool = True
     trailing_stop_positive: float = 0.107    # GA: 10.7% trigger
-    trailing_stop_positive_offset: float = 0.001  # GA: 0.1% offset
+    trailing_stop_positive_offset: float = 0.12  # 12% from peak (was GA's infeasible 0.001)
     trailing_only_offset_is_reached: bool = False  # GA: enable from start (aggressive)
 
     # P0 FIX: Disable exit_signal — 29/48 trades exit via exit_signal, ALL LOSE
@@ -145,14 +224,64 @@ class Hybrid_v3(IStrategy):
     RSI_MEAN_REV_EXIT: float = 70.0  # RSI > 70 for mean-rev exit (was 60)
     RSI_TREND_EXIT: float = 75.0  # RSI > 75 for trend exit (was 65)
 
-    # ── BB_RPB Pullback Parameters (regime=2) ────────────────────────
-    # Adapted from BB_RPB_TSL_BI.is_local_uptrend (NFI next gen).
-    # In a confirmed uptrend, wait for price to pull back to (or just
-    # below) the lower Bollinger Band with RSI oversold confirmation.
-    # This is the proven BB+RSI pullback entry signal.
-    BB_PULLBACK_FACTOR: float = 0.999  # close < bb_lower * factor (was 0.999)
-    BB_PULLBACK_RSI_MAX: float = 40.0  # RSI upper bound (oversold zone)
-    BB_PULLBACK_RSI_MIN: float = 20.0  # RSI lower bound (avoid capitulation)
+    # ── BB_RPB Buy Parameters (regime=2 trending) ────────────────────
+    # Migrated from BB_RPB_TSL_BI.py (NFI next gen family). Each block
+    # is gated by a separate "is_optimize_*" flag. We keep the same
+    # ranges as BB_RPB_TSL_BI so the proven NSGAII optimum is the
+    # default; the GA can re-explore the space later if desired.
+    #
+    # NOTE: BB_PULLBACK_FACTOR / BB_PULLBACK_RSI_* are superseded by
+    # `buy_bb_factor` / `buy_rsi_local_dip` and are no longer used.
+
+    is_optimize_dip = True
+    buy_rmi = IntParameter(30, 50, default=49, optimize=is_optimize_dip)
+    buy_cci = IntParameter(-135, -90, default=-116, optimize=is_optimize_dip)
+    buy_srsi_fk = IntParameter(30, 50, default=32, optimize=is_optimize_dip)
+    buy_cci_length = IntParameter(25, 45, default=25, optimize=is_optimize_dip)
+    buy_rmi_length = IntParameter(8, 20, default=17, optimize=is_optimize_dip)
+
+    is_optimize_break = True
+    buy_bb_width = DecimalParameter(0.065, 0.135, default=0.095, optimize=is_optimize_break)
+    buy_bb_delta = DecimalParameter(0.018, 0.035, default=0.025, optimize=is_optimize_break)
+
+    is_optimize_local_uptrend = True
+    buy_ema_diff = DecimalParameter(0.022, 0.027, default=0.024, optimize=is_optimize_local_uptrend)
+    buy_bb_factor = DecimalParameter(0.990, 0.999, default=0.999, optimize=True)
+    buy_closedelta = DecimalParameter(12.0, 18.0, default=13.494, optimize=is_optimize_local_uptrend)
+
+    is_optimize_local_dip = True
+    buy_ema_diff_local_dip = DecimalParameter(
+        0.022, 0.027, default=0.024, optimize=is_optimize_local_dip
+    )
+    buy_ema_high_local_dip = DecimalParameter(
+        0.90, 1.2, default=1.084, optimize=is_optimize_local_dip
+    )
+    buy_closedelta_local_dip = DecimalParameter(
+        12.0, 18.0, default=13.717, optimize=is_optimize_local_dip
+    )
+    buy_rsi_local_dip = IntParameter(15, 45, default=20, optimize=is_optimize_local_dip)
+    buy_crsi_local_dip = IntParameter(10, 18, default=10, optimize=True)
+
+    is_optimize_ewo = True
+    buy_rsi_fast = IntParameter(35, 50, default=44, optimize=is_optimize_ewo)
+    buy_rsi = IntParameter(15, 35, default=23, optimize=is_optimize_ewo)
+    buy_ewo = DecimalParameter(-6.0, 5, default=-5.001, optimize=is_optimize_ewo)
+    buy_ema_low = DecimalParameter(0.9, 0.99, default=0.935, optimize=is_optimize_ewo)
+    buy_ema_high = DecimalParameter(0.95, 1.2, default=0.968, optimize=is_optimize_ewo)
+
+    is_optimize_ewo_2 = True
+    buy_rsi_fast_ewo_2 = IntParameter(15, 50, default=45, optimize=is_optimize_ewo_2)
+    buy_rsi_ewo_2 = IntParameter(15, 50, default=35, optimize=is_optimize_ewo_2)
+    buy_ema_low_2 = DecimalParameter(0.90, 1.2, default=0.970, optimize=is_optimize_ewo_2)
+    buy_ema_high_2 = DecimalParameter(0.90, 1.2, default=1.087, optimize=is_optimize_ewo_2)
+    buy_ewo_high_2 = DecimalParameter(2, 12, default=4.179, optimize=is_optimize_ewo_2)
+
+    is_optimize_check = True
+    buy_roc_1h = IntParameter(-25, 200, default=4, optimize=is_optimize_check)
+    buy_bb_width_1h = DecimalParameter(0.3, 2.0, default=1.074, optimize=is_optimize_check)
+
+    is_optimize_cofi = True
+    buy_adx = IntParameter(0, 30, default=13, optimize=is_optimize_cofi)
 
     # ── Volatility Prediction Parameters ─────────────────────────────
     VOL_FORECAST_HORIZON: int = 12  # predict ATR 12 bars (3h) ahead
@@ -348,14 +477,36 @@ class Hybrid_v3(IStrategy):
         # 15m ADX (main TF)
         dataframe["adx_15m"] = ta.ADX(dataframe, timeperiod=14)
 
-        # 1h ADX (from informative)
+        # 1h ADX (from informative) + BB_RPB 1h indicators
         try:
             inf_1h = self.dp.get_pair_dataframe(pair=pair, timeframe="1h")
             if inf_1h is not None and len(inf_1h) > 0:
                 inf_1h["adx_1h"] = ta.ADX(inf_1h, timeperiod=14)
+                # BB_RPB 1h indicators (subset needed by entry conditions)
+                inf_1h["ema_50_1h"] = ta.EMA(inf_1h, timeperiod=50)
+                inf_1h["ema_100_1h"] = ta.EMA(inf_1h, timeperiod=100)
+                inf_1h["ema_200_1h"] = ta.EMA(inf_1h, timeperiod=200)
+                # Heikin-Ashi close for ROCR
+                ha_1h = heikinashi_safe(inf_1h)
+                inf_1h["ha_close_1h"] = ha_1h["close"]
+                inf_1h["rocr_1h"] = ta.ROCR(inf_1h["ha_close_1h"], timeperiod=168)
+                # ROC + BB width (1h) for is_additional_check
+                inf_1h["roc_1h"] = ta.ROC(inf_1h, timeperiod=9)
+                bb1h = qtpylib.bollinger_bands(
+                    qtpylib.typical_price(inf_1h), window=20, stds=2
+                )
+                inf_1h["bb_width_1h"] = (
+                    bb1h["upper"] - bb1h["lower"]
+                ) / bb1h["mid"]
+                cols_1h = [
+                    "adx_1h",
+                    "ema_50_1h", "ema_100_1h", "ema_200_1h",
+                    "ha_close_1h", "rocr_1h",
+                    "roc_1h", "bb_width_1h",
+                ]
                 dataframe = pd.merge_asof(
                     dataframe.sort_index(),
-                    inf_1h[["adx_1h"]].sort_index(),
+                    inf_1h[cols_1h].sort_index(),
                     left_index=True,
                     right_index=True,
                     direction="backward",
@@ -364,6 +515,12 @@ class Hybrid_v3(IStrategy):
                 dataframe["adx_1h"] = np.nan
         except Exception:
             dataframe["adx_1h"] = np.nan
+
+        # Ensure 1h BB_RPB columns exist even if merge failed
+        for col in ("ema_50_1h", "ema_100_1h", "ema_200_1h",
+                    "ha_close_1h", "rocr_1h", "roc_1h", "bb_width_1h"):
+            if col not in dataframe.columns:
+                dataframe[col] = np.nan
 
         # 4h ADX (from informative)
         try:
@@ -386,6 +543,12 @@ class Hybrid_v3(IStrategy):
         dataframe["adx_1h"] = dataframe["adx_1h"].ffill().fillna(0)
         dataframe["adx_4h"] = dataframe["adx_4h"].ffill().fillna(0)
         dataframe["adx_15m"] = dataframe["adx_15m"].ffill().fillna(0)
+
+        # Forward-fill 1h BB_RPB columns (they are constant within 1h bars)
+        for col in ("ema_50_1h", "ema_100_1h", "ema_200_1h",
+                    "ha_close_1h", "rocr_1h", "roc_1h", "bb_width_1h"):
+            if col in dataframe.columns:
+                dataframe[col] = dataframe[col].ffill()
 
         # Classify each TF's regime
         def _classify_regime(adx_val: float) -> int:
@@ -447,6 +610,147 @@ class Hybrid_v3(IStrategy):
         dataframe["bb_upper"] = bb["upperband"]
 
         dataframe["rsi"] = ta.RSI(dataframe, timeperiod=self.RSI_PERIOD)
+
+        # ── 3b. BB_RPB 15m Indicators (regime=2 trending entry) ────────
+        # Computed on the main 15m TF. Indicator names mirror BB_RPB_TSL_BI
+        # so the entry conditions can be ported verbatim. We avoid clashes
+        # with the existing EMA/MACD/BB stack: the legacy names `bb_lower`
+        # / `bb_middle` / `bb_upper` / `ema_slow` keep their original
+        # meaning; the BB_RPB bands use the `bb_*band2`/`bb_*band3`
+        # suffix from BB_RPB, and the HA-based slow EMA is renamed to
+        # `ema_slow_ha` to prevent overwrite of the regime `ema_slow`.
+        bb_rpb2 = qtpylib.bollinger_bands(qtpylib.typical_price(dataframe), window=20, stds=2)
+        dataframe["bb_lowerband2"] = bb_rpb2["lower"]
+        dataframe["bb_middleband2"] = bb_rpb2["mid"]
+        dataframe["bb_upperband2"] = bb_rpb2["upper"]
+
+        bb_rpb3 = qtpylib.bollinger_bands(qtpylib.typical_price(dataframe), window=20, stds=3)
+        dataframe["bb_lowerband3"] = bb_rpb3["lower"]
+        dataframe["bb_middleband3"] = bb_rpb3["mid"]
+        dataframe["bb_upperband3"] = bb_rpb3["upper"]
+
+        dataframe["bb_width"] = (
+            dataframe["bb_upperband2"] - dataframe["bb_lowerband2"]
+        ) / dataframe["bb_middleband2"]
+        dataframe["bb_delta"] = (
+            dataframe["bb_lowerband2"] - dataframe["bb_lowerband3"]
+        ) / dataframe["bb_lowerband2"]
+
+        # CCI hyperopt-sweep (one column per value in buy_cci_length.range)
+        for val in self.buy_cci_length.range:
+            dataframe[f"cci_length_{val}"] = ta.CCI(dataframe, val)
+
+        # RMI hyperopt-sweep (one column per value in buy_rmi_length.range)
+        for val in self.buy_rmi_length.range:
+            dataframe[f"rmi_length_{val}"] = RMI(dataframe, length=val, mom=4)
+
+        # Stochastic RSI
+        stoch = ta.STOCHRSI(dataframe, 15, 20, 2, 2)
+        dataframe["srsi_fk"] = stoch["fastk"]
+        dataframe["srsi_fd"] = stoch["fastd"]
+
+        # closedelta = abs(close - close.shift(1))
+        dataframe["closedelta"] = (dataframe["close"] - dataframe["close"].shift()).abs()
+
+        # SMAs
+        dataframe["sma_15"] = ta.SMA(dataframe, timeperiod=15)
+        dataframe["sma_30"] = ta.SMA(dataframe, timeperiod=30)
+        dataframe["sma_75"] = ta.SMA(dataframe, timeperiod=75)
+
+        # CTI (ConnorsRSI internal)
+        dataframe["cti"] = pta.cti(dataframe["close"], length=20)
+
+        # CRSI (3, 2, 100)
+        crsi_closechange = dataframe["close"] / dataframe["close"].shift(1)
+        crsi_updown = np.where(
+            crsi_closechange.gt(1), 1.0, np.where(crsi_closechange.lt(1), -1.0, 0.0)
+        )
+        dataframe["crsi"] = (
+            ta.RSI(dataframe["close"], timeperiod=3)
+            + ta.RSI(crsi_updown, timeperiod=2)
+            + ta.ROC(dataframe["close"], 100)
+        ) / 3
+
+        # EMAs (multiple)
+        dataframe["ema_8"] = ta.EMA(dataframe, timeperiod=8)
+        dataframe["ema_12"] = ta.EMA(dataframe, timeperiod=12)
+        dataframe["ema_13"] = ta.EMA(dataframe, timeperiod=13)
+        dataframe["ema_16"] = ta.EMA(dataframe, timeperiod=16)
+        dataframe["ema_20"] = ta.EMA(dataframe, timeperiod=20)
+        dataframe["ema_26"] = ta.EMA(dataframe, timeperiod=26)
+        dataframe["ema_50"] = ta.EMA(dataframe, timeperiod=50)
+        dataframe["ema_100"] = ta.EMA(dataframe, timeperiod=100)
+        dataframe["ema_200"] = ta.EMA(dataframe, timeperiod=200)
+
+        # RSI variants
+        dataframe["rsi_fast"] = ta.RSI(dataframe, timeperiod=4)
+        dataframe["rsi_slow"] = ta.RSI(dataframe, timeperiod=20)
+
+        # EWO (50, 200)
+        dataframe["EWO"] = EWO(dataframe, 50, 200)
+
+        # Williams %R (14 only — the main series used by entries)
+        dataframe["r_14"] = williams_r(dataframe, period=14)
+
+        # Volume rolling means
+        dataframe["volume_mean_12"] = dataframe["volume"].rolling(12).mean().shift(1)
+        dataframe["volume_mean_24"] = dataframe["volume"].rolling(24).mean().shift(1)
+
+        # Heikin Ashi
+        heikinashi = heikinashi_safe(dataframe)
+        dataframe["ha_open"] = heikinashi["open"]
+        dataframe["ha_close"] = heikinashi["close"]
+        dataframe["ha_high"] = heikinashi["high"]
+        dataframe["ha_low"] = heikinashi["low"]
+
+        # Heikin-Ashi typical price BB(40, 2) for ClucHA
+        bb_ha_40 = qtpylib.bollinger_bands(ha_typical_price(dataframe), window=40, stds=2)
+        dataframe["bb_lowerband2_40"] = bb_ha_40["lower"]
+        dataframe["bb_middleband2_40"] = bb_ha_40["mid"]
+        dataframe["bb_upperband2_40"] = bb_ha_40["upper"]
+        dataframe["bb_delta_cluc"] = (
+            dataframe["bb_middleband2_40"] - dataframe["bb_lowerband2_40"]
+        ).abs()
+        dataframe["ha_closedelta"] = (dataframe["ha_close"] - dataframe["ha_close"].shift()).abs()
+        dataframe["tail"] = (dataframe["ha_close"] - dataframe["ha_low"]).abs()
+        # NB: renamed from BB_RPB's `ema_slow` (50) to avoid clobbering the
+        # regime/legacy `ema_slow` (EMA26) on the main close series.
+        dataframe["ema_slow_ha"] = ta.EMA(dataframe["ha_close"], timeperiod=50)
+
+        # Stochastic fast (for cofi)
+        stoch_fast = ta.STOCHF(dataframe, 5, 3, 0, 3, 0)
+        dataframe["fastd"] = stoch_fast["fastd"]
+        dataframe["fastk"] = stoch_fast["fastk"]
+
+        # 1h CTI / CRSI for cross-TF NFI entries
+        try:
+            inf_1h_cti = self.dp.get_pair_dataframe(pair=pair, timeframe="1h")
+            if inf_1h_cti is not None and len(inf_1h_cti) > 0:
+                inf_1h_cti["cti_1h"] = pta.cti(inf_1h_cti["close"], length=20)
+                crsi1h_change = inf_1h_cti["close"] / inf_1h_cti["close"].shift(1)
+                crsi1h_updown = np.where(
+                    crsi1h_change.gt(1), 1.0,
+                    np.where(crsi1h_change.lt(1), -1.0, 0.0),
+                )
+                inf_1h_cti["crsi_1h"] = (
+                    ta.RSI(inf_1h_cti["close"], timeperiod=3)
+                    + ta.RSI(crsi1h_updown, timeperiod=2)
+                    + ta.ROC(inf_1h_cti["close"], 100)
+                ) / 3
+                dataframe = pd.merge_asof(
+                    dataframe.sort_index(),
+                    inf_1h_cti[["cti_1h", "crsi_1h"]].sort_index(),
+                    left_index=True,
+                    right_index=True,
+                    direction="backward",
+                )
+        except Exception:
+            pass
+        for col in ("cti_1h", "crsi_1h"):
+            if col not in dataframe.columns:
+                dataframe[col] = np.nan
+            else:
+                dataframe[col] = dataframe[col].ffill()
 
         # ── 4. Volatility Prediction via Ridge ────────────────────────
         if not _sklearn_available:
@@ -529,83 +833,238 @@ class Hybrid_v3(IStrategy):
     # ==================================================================
     def populate_entry_trend(self, dataframe: DataFrame, metadata: dict) -> DataFrame:
         """
-        Regime-switched entry logic (long only):
+        Regime-switched entry logic (long only).
 
-        Generating Alpha paper dual-mode architecture:
-          - regime=2 (trending): EMA cross + ADX confirmation (trend-following)
-            * EMA12 > EMA26  AND  ADX > 20  AND  +DI > -DI
-            * MACD histogram > 0 confirms momentum
-            * BB_RPB pullback variant: close < bb_lower * 0.999 AND 20<RSI<40
-              (only in uptrend; allows entering trending regime on dips)
+        Phase B integration: regime=2 trending entries now use the
+        BB_RPB (NFI next gen) multi-condition stack. The regime=0
+        mean-reversion and regime=1 weak-trend entries are preserved
+        as designed.
+
+          - regime=2 (trending): BB_RPB stack
+              * is_local_uptrend  (primary BB pullback — NFI next gen)
+              * is_local_dip      (EMA cross + RSI dip — NFI next gen)
+              * is_ewo            (EWO oversold — SMA offset)
+              * is_ewo_2          (EWO cross-TF uptrend — NFI next gen)
+              * is_BB_checked     (RMI+CCI+SRSI dip with BB break — BinH)
+              * is_r_deadfish     (bear-trap — reverse deadfish)
+              * is_clucHA         (Heikin-Ashi pullback — NFI next gen)
+              * is_cofi           (stochastic + EWO — NFI next gen)
+              * is_nfi_32         (NFI quick mode — pullback)
+            All of the above are AND-combined with is_additional_check
+            (1h ROC + BB-width filter from BB_RPB).
           - regime=0 (ranging): BB touch + RSI confirm (mean-reversion)
-            * close < bb_lower  AND  RSI < 45
-          - regime=1 (transition): NO TRADES (avoid whipsaw)
+            * close < bb_lower  AND  RSI < 40
+          - regime=1 (transition): weak trend (EMA cross + ADX)
+            * Preserved unchanged (will exit with trending_exit rules).
         """
         dataframe["enter_long"] = 0
         # P2: entry tag column for per-type win-rate stats
         dataframe["enter_tag"] = ""
 
-        # ── Trending Regime: EMA Cross + ADX Confirmation ───────────
-        # EMA cross: fast > slow = bullish alignment
-        # ADX > 20 confirms trend is present (not ranging)
-        # +DI > -DI confirms uptrend direction
-        # MACD histogram > 0 confirms bullish momentum
-        trending_entry = (
-            (dataframe["regime"] == 2)
-            & (dataframe["ema_fast"] > dataframe["ema_slow"])  # EMA cross bullish
-            & (dataframe["adx_15m"] > self.ADX_TREND_MIN)  # ADX confirms trend
-            & (dataframe["plus_di"] > dataframe["minus_di"])  # +DI > -DI
-            & (dataframe["macd_hist"] > 0)  # MACD momentum positive
-            & (dataframe["volume"] > dataframe["volume"].rolling(20).mean())  # volume above MA
-        )
+        # Volume MA20 — used by ranging + transition entries (and a safety
+        # liquidity floor for the BB_RPB stack).
+        vol_ma_20 = dataframe["volume"].rolling(20).mean()
 
         # ── Ranging Regime: BB Touch + RSI Confirmation ──────────────
         # BB lower touch = price at oversold level
-        # RSI < 30 = oversold confirmation (mean-reversion bounce setup)
+        # RSI < 40 = oversold confirmation (mean-reversion bounce setup)
         # Volume above 20-period MA confirms institutional interest
         ranging_entry = (
             (dataframe["regime"] == 0)
             & (dataframe["close"] < dataframe["bb_lower"])  # BB lower touch
-            & (dataframe["rsi"] < self.RSI_MEAN_REV_ENTRY)  # RSI oversold (< 30)
-            & (dataframe["volume"] > dataframe["volume"].rolling(20).mean())  # volume above MA
+            & (dataframe["rsi"] < self.RSI_MEAN_REV_ENTRY)  # RSI oversold
+            & (dataframe["volume"] > vol_ma_20)  # volume above MA
         )
 
-        # ── Transition Regime: Weak Trend Entry (P1) ────────────────
-        # Previously regime=1 had NO TRADES. Now allow weak trend entry
-        # when EMA cross + volume confirm, but with stricter conditions
-        # than regime=2 to avoid whipsaws.
+        # ── Transition Regime: Weak Trend Entry (P1, preserved) ──────
+        # Same as the previous version: allow weak-trend entry when EMA
+        # cross + ADX confirm, with stricter volume to compensate for
+        # the weaker regime signal.
         transition_entry = (
             (dataframe["regime"] == 1)
             & (dataframe["ema_fast"] > dataframe["ema_slow"])
-            & (dataframe["adx_15m"] > self.ADX_TREND_MIN)  # same ADX threshold
+            & (dataframe["adx_15m"] > self.ADX_TREND_MIN)
             & (dataframe["plus_di"] > dataframe["minus_di"])
-            # Stricter volume: 1.2x MA to compensate for weaker regime signal
-            & (dataframe["volume"] > 1.2 * dataframe["volume"].rolling(20).mean())
+            & (dataframe["volume"] > 1.2 * vol_ma_20)
         )
 
-        # ── BB_RPB Pullback Entry (regime=2 only) ─────────────────────
-        # Adapted from BB_RPB_TSL_BI.is_local_uptrend (NFI next gen):
-        # In a confirmed uptrend, wait for price to pull back to (or just
-        # below) the BB lower band with RSI oversold confirmation. RSI is
-        # bounded between 20-40 to avoid both overbought noise and extreme
-        # capitulation. Volume above 20-MA confirms institutional interest.
-        bb_pullback_entry = (
+        # ── Trending Regime (regime=2): BB_RPB Stack ─────────────────
+        # All conditions are ported verbatim from BB_RPB_TSL_BI, except
+        # they are wrapped in a regime==2 filter and AND-combined with
+        # is_additional_check. Each condition receives a distinct tag
+        # so we can keep per-condition win-rate statistics.
+
+        rmi_col = f"rmi_length_{self.buy_rmi_length.value}"
+        cci_col = f"cci_length_{self.buy_cci_length.value}"
+
+        # is_dip: oversold (RMI + CCI + SRSI)
+        is_dip = (
+            (dataframe[rmi_col] < self.buy_rmi.value)
+            & (dataframe[cci_col] <= self.buy_cci.value)
+            & (dataframe["srsi_fk"] < self.buy_srsi_fk.value)
+        )
+
+        # is_break: volatility expansion below bb_lowerband3
+        is_break = (
+            (dataframe["bb_delta"] > self.buy_bb_delta.value)
+            & (dataframe["bb_width"] > self.buy_bb_width.value)
+            & (dataframe["closedelta"] > dataframe["close"] * self.buy_closedelta.value / 1000)
+            & (dataframe["close"] < dataframe["bb_lowerband3"] * self.buy_bb_factor.value)
+        )
+        is_BB_checked = is_dip & is_break  # combined "bb" tag
+
+        # is_local_uptrend: BB pullback inside an uptrend (PRIMARY)
+        is_local_uptrend = (
+            (dataframe["ema_26"] > dataframe["ema_12"])
+            & (
+                dataframe["ema_26"] - dataframe["ema_12"]
+                > dataframe["open"] * self.buy_ema_diff.value
+            )
+            & (dataframe["ema_26"].shift() - dataframe["ema_12"].shift() > dataframe["open"] / 100)
+            & (dataframe["close"] < dataframe["bb_lowerband2"] * self.buy_bb_factor.value)
+            & (dataframe["closedelta"] > dataframe["close"] * self.buy_closedelta.value / 1000)
+        )
+
+        # is_local_dip: EMA-confirmed oversold dip
+        is_local_dip = (
+            (dataframe["ema_26"] > dataframe["ema_12"])
+            & (
+                dataframe["ema_26"] - dataframe["ema_12"]
+                > dataframe["open"] * self.buy_ema_diff_local_dip.value
+            )
+            & (dataframe["ema_26"].shift() - dataframe["ema_12"].shift() > dataframe["open"] / 100)
+            & (dataframe["close"] < dataframe["ema_20"] * self.buy_ema_high_local_dip.value)
+            & (dataframe["rsi"] < self.buy_rsi_local_dip.value)
+            & (dataframe["crsi"] > self.buy_crsi_local_dip.value)
+            & (dataframe["closedelta"] > dataframe["close"] * self.buy_closedelta_local_dip.value / 1000)
+        )
+
+        # is_ewo: oversold below short EMA + bullish EWO
+        is_ewo = (
+            (dataframe["rsi_fast"] < self.buy_rsi_fast.value)
+            & (dataframe["close"] < dataframe["ema_8"] * self.buy_ema_low.value)
+            & (dataframe["EWO"] > self.buy_ewo.value)
+            & (dataframe["close"] < dataframe["ema_16"] * self.buy_ema_high.value)
+            & (dataframe["rsi"] < self.buy_rsi.value)
+        )
+
+        # is_ewo_2: cross-TF (1h EMA200 uptrend) + EWO oversold
+        is_ewo_2 = (
+            (dataframe["ema_200_1h"] > dataframe["ema_200_1h"].shift(12))
+            & (dataframe["ema_200_1h"].shift(12) > dataframe["ema_200_1h"].shift(24))
+            & (dataframe["rsi_fast"] < self.buy_rsi_fast_ewo_2.value)
+            & (dataframe["close"] < dataframe["ema_8"] * self.buy_ema_low_2.value)
+            & (dataframe["EWO"] > self.buy_ewo_high_2.value)
+            & (dataframe["close"] < dataframe["ema_16"] * self.buy_ema_high_2.value)
+            & (dataframe["rsi"] < self.buy_rsi_ewo_2.value)
+        )
+
+        # is_r_deadfish: bear-trap (close < bb_middle, but with above-MA
+        # volume and oversold Williams %R)
+        is_r_deadfish = (
+            (dataframe["ema_100"] < dataframe["ema_200"] * 0.972)  # legacy default; no opt in Hybrid_v3
+            & (dataframe["bb_width"] > 0.091)                       # legacy default
+            & (dataframe["close"] < dataframe["bb_middleband2"] * 0.911)
+            & (dataframe["volume_mean_12"] > dataframe["volume_mean_24"] * 1.008)
+            & (dataframe["cti"] < -0.115)
+            & (dataframe["r_14"] < -44.34)
+        )
+
+        # is_clucHA: Heikin-Ashi pullback below HA-BB(40, 2)
+        is_clucHA = (dataframe["rocr_1h"] > 0.416) & (
+            (
+                (dataframe["bb_lowerband2_40"].shift() > 0)
+                & (dataframe["bb_delta_cluc"] > dataframe["ha_close"] * 0.04)
+                & (dataframe["ha_closedelta"] > dataframe["ha_close"] * 0.05)
+                & (dataframe["tail"] < dataframe["bb_delta_cluc"] * 0.913)
+                & (dataframe["ha_close"] < dataframe["bb_lowerband2_40"].shift())
+                & (dataframe["ha_close"] < dataframe["ha_close"].shift())
+            )
+            | (
+                (dataframe["ha_close"] < dataframe["ema_slow_ha"])
+                & (dataframe["ha_close"] < 0.04 * dataframe["bb_lowerband2"])
+            )
+        )
+
+        # is_cofi: stoch crossover + EWO bull + oversold protection
+        is_cofi = (
+            (dataframe["open"] < dataframe["ema_8"] * 1.147)
+            & (qtpylib.crossed_above(dataframe["fastk"], dataframe["fastd"]))
+            & (dataframe["fastk"] < 39)
+            & (dataframe["fastd"] < 28)
+            & (dataframe["adx_15m"] > self.buy_adx.value)
+            & (dataframe["EWO"] > 8.594)
+            & (dataframe["cti"] < -0.892)
+            & (dataframe["r_14"] < -85.016)
+        )
+
+        # is_nfi_32: NFI quick mode (legacy param values)
+        is_nfi_32 = (
+            (dataframe["rsi_slow"] < dataframe["rsi_slow"].shift(1))
+            & (dataframe["rsi_fast"] < 46)
+            & (dataframe["rsi"] > 25.0)
+            & (dataframe["close"] < dataframe["sma_15"] * 0.93)
+            & (dataframe["cti"] < -0.9)
+        )
+
+        # is_additional_check: cross-TF filter (1h ROC + 1h BB width).
+        # Mirrors BB_RPB_TSL_BI's gate: only fire trending entries when
+        # 1h trend agrees (positive ROC, reasonable BB width).
+        is_additional_check = (
+            (dataframe["roc_1h"] < self.buy_roc_1h.value)
+            & (dataframe["bb_width_1h"] < self.buy_bb_width_1h.value)
+        )
+
+        # Build the OR'd list of conditions
+        bb_rpb_conditions = reduce(
+            lambda x, y: x | y,
+            [
+                is_BB_checked,
+                is_local_uptrend,
+                is_local_dip,
+                is_ewo,
+                is_ewo_2,
+                is_r_deadfish,
+                is_clucHA,
+                is_cofi,
+                is_nfi_32,
+            ],
+        )
+
+        # regime=2 + additional_check + at least one BB_RPB condition true
+        trending_entry = (
             (dataframe["regime"] == 2)
-            & (dataframe["ema_fast"] > dataframe["ema_slow"])  # uptrend confirmed
-            & (dataframe["close"] < dataframe["bb_lower"] * self.BB_PULLBACK_FACTOR)
-            & (dataframe["rsi"] < self.BB_PULLBACK_RSI_MAX)
-            & (dataframe["rsi"] > self.BB_PULLBACK_RSI_MIN)
-            & (dataframe["volume"] > dataframe["volume"].rolling(20).mean())
+            & is_additional_check
+            & bb_rpb_conditions
         )
 
-        dataframe.loc[trending_entry, "enter_long"] = 1
-        dataframe.loc[trending_entry, "enter_tag"] = "trend"
+        # ── Apply entries (priority order matters when overlap) ──────
+        # We OR-assign tags; the LAST assignment wins, so we paint tags
+        # in increasing priority. The final assignment (trending) is
+        # the most "specific" so it shows up when multiple conditions
+        # are true.
         dataframe.loc[ranging_entry, "enter_long"] = 1
         dataframe.loc[ranging_entry, "enter_tag"] = "mean_rev"
         dataframe.loc[transition_entry, "enter_long"] = 1
         dataframe.loc[transition_entry, "enter_tag"] = "weak_trend"
-        dataframe.loc[bb_pullback_entry, "enter_long"] = 1
-        dataframe.loc[bb_pullback_entry, "enter_tag"] = "bb_pullback"
+
+        # Per-condition trending tags: paint first, then overwrite
+        # `trending` last so a row in multiple conditions shows the
+        # most specific reason.
+        for cond, tag in [
+            (is_BB_checked, "bb_rpb_bb"),
+            (is_local_uptrend, "bb_rpb_local_uptrend"),
+            (is_local_dip, "bb_rpb_local_dip"),
+            (is_ewo, "bb_rpb_ewo"),
+            (is_ewo_2, "bb_rpb_ewo_2"),
+            (is_r_deadfish, "bb_rpb_r_deadfish"),
+            (is_clucHA, "bb_rpb_clucHA"),
+            (is_cofi, "bb_rpb_cofi"),
+            (is_nfi_32, "bb_rpb_nfi_32"),
+        ]:
+            mask = (dataframe["regime"] == 2) & is_additional_check & cond
+            dataframe.loc[mask, "enter_long"] = 1
+            dataframe.loc[mask, "enter_tag"] = tag
 
         return dataframe
 
