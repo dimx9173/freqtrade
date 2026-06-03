@@ -91,25 +91,27 @@ class Hybrid_v3(IStrategy):
 
     # Startup: covers ATR horizon + rolling windows + informative TF alignment
     startup_candle_count: int = 350
-    # P0: Very wide base stoploss so custom_stoploss fully controls exits
-    stoploss: float = -0.99  # was -0.03; custom_stoploss now handles all stops
 
     # ── Exit / ROI ──────────────────────────────────────────────────
-    # P0 FIX: Lower ROI targets — only 20.8% of trades were hitting 3%
-    # New targets designed to capture smaller, more frequent wins
+    # GA-optimized ROI/SL/Trailing (2026-06-01 session, 50 epochs)
+    # Source: user_data/strategies/math_based/ga_framework/reports/Hybrid_v3_GA_results_20260601.md
+    # Best Loss: 115.499 (ProfitDrawDownHyperOptLoss)
+    # Backtest: 674 trades, 64.8% WR, 0.00% profit, 13.26% max DD
     minimal_roi: dict[str, float] = {
-        "0": 0.015,  # 1.5% immediate target (was 3%)
-        "60": 0.01,  # 1% after 15h (was 1.5% after 30h)
-        "120": 0.005,  # 0.5% after 30h (was 0.5% after 60h)
+        "0": 0.216,    # GA: 21.6% within first 50min (high initial target)
+        "50": 0.03,    # GA: 3% after 50min
+        "131": 0.019,  # GA: 1.9% after 131min
+        "164": 0.0,    # No ROI after 164min
     }
 
-    # P0: Disable trailing_stop — it conflicts with custom_stoploss.
-    # Use custom_stoploss exclusively for profit-protection (returns positive
-    # stoploss values to lock profit, like BB_RPB_TSL_BI design).
+    # GA-optimized stoploss
+    stoploss: float = -0.026  # GA: -2.6% (was -0.99 to let custom_stoploss dominate)
+
+    # GA-optimized trailing (enabled, aggressive)
     trailing_stop: bool = True
-    trailing_stop_positive: float = 0.02
-    trailing_stop_positive_offset: float = 0.03
-    trailing_only_offset_is_reached: bool = True
+    trailing_stop_positive: float = 0.107    # GA: 10.7% trigger
+    trailing_stop_positive_offset: float = 0.001  # GA: 0.1% offset
+    trailing_only_offset_is_reached: bool = False  # GA: enable from start (aggressive)
 
     # P0 FIX: Disable exit_signal — 29/48 trades exit via exit_signal, ALL LOSE
     # avg -0.65%. exit_signal is the primary source of losses. ROI hits 100% win.
