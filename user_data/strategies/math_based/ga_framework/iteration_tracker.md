@@ -113,6 +113,34 @@
 - **報告**: `user_data/strategies/math_based/ga_framework/reports/Hybrid_v3_GA_results_20260601.md`
 - **狀態**: ⚠️ 進場邏輯是下一個瓶頸（架構 > 參數）
 
+#### Iteration #3 (GA 套用 + BB_RPB 進場整合) — 2026-06-03
+- **日期**: 2026-06-03
+- **Commits**: `2a33631f9` (Phase A) + `bf1e2886d` (Phase B)
+- **目標**: 套用 GA 最佳 ROI/SL/Trailing + 整合 BB_RPB 多重進場條件取代 regime=2 trending 進場
+- **Phase A — 套用 GA 參數**:
+  - minimal_roi: 21.6%/3%/1.9% (GA 最佳)
+  - stoploss: -2.6%
+  - trailing: 10.7% 觸發，**12% 偏移**（GA 報告 0.1% 違反 freqtrade 規則 infeasible，已修正）
+- **Phase B — BB_RPB 進場整合**:
+  - 加入 11 個 BB_RPB 進場參數（buy_rmi/cci/srsi_fk/ema_diff/...）
+  - populate_entry_trend regime=2 改用 9 個 OR 條件（is_dip, is_break, is_local_uptrend, is_local_dip, is_ewo, is_ewo_2, is_r_deadfish, is_clucHA, is_cofi, is_nfi_32）
+  - 保留 regime=0 mean-reversion + regime=1 弱進場
+  - 1h filter 額外確認
+- **Backtest 結果** (2026-04-01 ~ 2026-05-31, BTC/USDT 15m, 2 個月):
+  - 29 trades（從 1166 銳減，BB_RPB 條件太嚴格）
+  - 勝率 62.1%（從 85.2% 下降）
+  - **總利潤 -0.17%**（從 -3.98% 改善 96% ✅）
+  - **Max DD 0.45%**（從 5.75% 改善 92% ✅）
+- **結論**:
+  - ✅ 架構方向正確（虧損與 DD 大幅降低）
+  - ⚠️ 進場條件太嚴格導致交易數過少（統計顯著性不足）
+  - ⚠️ 仍未獲利
+- **下一步**:
+  - 跑 4 個月 timerange 看穩定性
+  - 放寬 BB_RPB 進場條件（OR 改 AND？減少條件數量？）
+  - 重新 GA 優化（包含 BB_RPB 參數空間）
+- **狀態**: 🔄 持續迭代中
+
 ---
 
 ### MultiTF_RegimeDetector_v1 (15m × 10 幣種) — ❌ 失敗教訓
