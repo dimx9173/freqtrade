@@ -52,10 +52,12 @@ STRATEGY=""
 CONFIG=""
 EPOCHS=500
 JOBS=1
-TIME_MONTHS=6
+TIME_MONTHS=4
 LOSS_FUNCTION="ProfitDrawDownHyperOptLoss"
 SPACES="default"
 HYPEROPT_FILENAME=""
+ALLOW_SHORT_WINDOW=false
+FORCE_PREFLIGHT=false
 
 show_help() {
     echo "數學策略 GA 迭代框架 v2.0"
@@ -69,10 +71,12 @@ show_help() {
     echo "  --config=PATH          Config 路徑 (預設: 自動尋找策略目錄下的 config.json)"
     echo "  --epochs=N             GA 迭代輪數 (預設: 500)"
     echo "  --jobs=N               並行任務數 (預設: 1)"
-    echo "  --months=N             回測月份數 (預設: 6)"
+    echo "  --months=N             回測月份數 (預設: 4, 最小 4)"
     echo "  --loss=NAME            損失函數 (預設: ProfitDrawDownHyperOptLoss)"
     echo "  --spaces=SPACES        優化空間 (預設: default)"
     echo "  --hyperopt-filename=FILENAME  從現有 hyperopt 檔案繼續 (可選)"
+    echo "  --allow-short-window   允許 < 4 個月回測窗口 (預設: 不允許)"
+    echo "  --force                跳過 pre-flight 失敗，強制執行 GA"
     echo "  --list                 列出所有數學策略"
     echo "  --help                 顯示幫助"
     echo ""
@@ -164,6 +168,14 @@ while [[ $# -gt 0 ]]; do
             HYPEROPT_FILENAME="${1#*=}"
             shift
             ;;
+        --allow-short-window)
+            ALLOW_SHORT_WINDOW=true
+            shift
+            ;;
+        --force)
+            FORCE_PREFLIGHT=true
+            shift
+            ;;
         --list)
             list_strategies
             exit 0
@@ -234,6 +246,19 @@ fi
 
 echo -e "${GREEN}✅ Config: $CONFIG${NC}"
 
+# ---- 檢查回測窗口長度 ----
+if [ "$TIME_MONTHS" -lt 4 ] && [ "$ALLOW_SHORT_WINDOW" != true ]; then
+    echo -e "${RED}❌ 錯誤: 回測窗口為 ${TIME_MONTHS} 個月，少於最低要求的 4 個月${NC}"
+    echo -e "${YELLOW}   短窗口容易隱藏 regime 切換問題（見 01_process_bottlenecks.md）。${NC}"
+    echo -e "${YELLOW}   若確定要使用短窗口，請加上 --allow-short-window 旗標。${NC}"
+    exit 1
+fi
+
+if [ "$TIME_MONTHS" -lt 4 ] && [ "$ALLOW_SHORT_WINDOW" = true ]; then
+    echo -e "${YELLOW}⚠️  警告: 回測窗口僅 ${TIME_MONTHS} 個月（已透過 --allow-short-window 強制允許）${NC}"
+    echo ""
+fi
+
 # ---- 建立目錄 ----
 SESSION_ID=$(date +%Y%m%d_%H%M%S)
 SESSION_DIR="$REPORTS_DIR/$STRATEGY/$SESSION_ID"
@@ -244,6 +269,64 @@ mkdir -p "$LOGS_DIR"
 END_DATE=$(date +%Y%m%d)
 START_DATE=$(date -d "$TIME_MONTHS months ago" +%Y%m%d 2>/dev/null || date -v-${TIME_MONTHS}m +%Y%m%d)
 TIMERANGE="${START_DATE}-${END_DATE}"
+
+# ---- 執行 Pre-flight Smoke Test ----
+PREFLIGHT_LOG="$LOGS_DIR/preflight_${SESSION_ID}.log"
+PREFLIGHT_SCRIPT="$SCRIPT_DIR/pre_flight_smoke_test.py"
+
+if [ -f "$PREFLIGHT_SCRIPT" ]; then
+    echo -e "${BLUE}🔍 執行 Pre-flight Smoke Test...${NC}"
+    python3 "$PREFLIGHT_SCRIPT" \
+        --strategy "$STRATEGY" \
+        --config "$CONFIG" \
+        --timerange "$TIMERANGE" \
+        > "$PREFLIGHT_LOG" 2>&1
+    PREFLIGHT_EXIT=$?
+
+    echo -e "Pre-flight 結果寫入: ${CYAN}$PREFLIGHT_LOG${NC}"
+
+    if [ $PREFLIGHT_EXIT -eq 2 ]; then
+        echo -e "${RED}❌ Pre-flight 失敗: 進場信號過少（exit code 2）${NC}"
+        if [ "$FORCE_PREFLIGHT" != true ]; then
+            echo -e "${YELLOW}   策略進場條件可能過嚴，GA 終止（避免浪費 70 分鐘）。${NC}"
+            echo -e "${YELLOW}   若要強制執行，請加上 --force 旗標。${NC}"
+            cat "$PREFLIGHT_LOG"
+            exit 2
+        else
+            echo -e "${YELLOW}⚠️  已透過 --force 強制繼續${NC}"
+        fi
+    elif [ $PREFLIGHT_EXIT -eq 3 ]; then
+        echo -e "${RED}❌ Pre-flight 失敗: 過度交易（exit code 3）${NC}"
+        if [ "$FORCE_PREFLIGHT" != true ]; then
+            echo -e "${YELLOW}   策略產生過多信號，GA 終止。${NC}"
+            cat "$PREFLIGHT_LOG"
+            exit 3
+        else
+            echo -e "${YELLOW}⚠️  已透過 --force 強制繼續${NC}"
+        fi
+    elif [ $PREFLIGHT_EXIT -eq 4 ]; then
+        echo -e "${RED}❌ Pre-flight 失敗: Negative KB 偵測到 DANGER 模式（exit code 4）${NC}"
+        if [ "$FORCE_PREFLIGHT" != true ]; then
+            echo -e "${YELLOW}   策略存在已知陷阱（如 exit_trend LEVEL 振盪），GA 終止。${NC}"
+            cat "$PREFLIGHT_LOG"
+            exit 4
+        else
+            echo -e "${YELLOW}⚠️  已透過 --force 強制繼續${NC}"
+        fi
+    elif [ $PREFLIGHT_EXIT -eq 1 ]; then
+        echo -e "${YELLOW}⚠️  Pre-flight 警告（exit code 1）${NC}"
+        head -20 "$PREFLIGHT_LOG"
+    elif [ $PREFLIGHT_EXIT -eq 0 ]; then
+        echo -e "${GREEN}✅ Pre-flight 通過${NC}"
+    else
+        echo -e "${YELLOW}⚠️  Pre-flight 未知退出碼: $PREFLIGHT_EXIT${NC}"
+        head -20 "$PREFLIGHT_LOG"
+    fi
+    echo ""
+else
+    echo -e "${YELLOW}⚠️  找不到 pre_flight_smoke_test.py，跳過 pre-flight${NC}"
+    echo ""
+fi
 
 # ---- 記錄迭代資訊 ----
 ITERATION_LOG="$SESSION_DIR/iteration.md"
@@ -315,6 +398,12 @@ CMD=(
 
 # 如果有 hyperopt-filename，加入
 if [ -n "$HYPEROPT_FILENAME" ]; then
+    # Phase 1 review NEEDS-FIX #3: reject path traversal / absolute paths to
+    # keep the file within user_data/hyperopt_results/.
+    if [[ "$HYPEROPT_FILENAME" == *..* ]] || [[ "$HYPEROPT_FILENAME" == /* ]]; then
+        echo -e "${RED}❌ --hyperopt-filename 不能包含 .. 或絕對路徑（避免路徑注入）${NC}"
+        exit 1
+    fi
     CMD+=(--hyperopt-filename "$HYPEROPT_FILENAME")
 fi
 
