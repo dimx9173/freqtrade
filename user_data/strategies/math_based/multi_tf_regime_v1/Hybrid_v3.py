@@ -1032,6 +1032,9 @@ class Hybrid_v3(IStrategy):
         )
 
         # regime=2 + additional_check + at least one BB_RPB condition true
+        # 2026-06-03: 嘗試加 close > ema_50 filter，但 4 個月 backtest 無改善
+        # （regime 偵測已隱含過濾 downtrend：regime=2 = uptrend）
+        # 保留原架構，未來可從不同方向優化
         trending_entry = (
             (dataframe["regime"] == 2)
             & is_additional_check
