@@ -4,6 +4,7 @@
 > **日期**: 2026-06-05
 > **目標**: 擺脫 Hybrid_v3 結構性限制（uptrend-only、單幣種 BTC），探索 4 條新架構突破
 > **方法論**: 每條路徑先做 POC (proof of concept) 驗證可行性，再決定是否進入完整 backtest
+> **POC 結果**: [multi_breakthrough_poc_results_20260605.md](../../reports/multi_breakthrough_poc_results_20260605.md) — Path 1 ❌ FAILED, Path 2 🟡 PARTIAL
 
 ---
 
