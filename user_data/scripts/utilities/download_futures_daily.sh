@@ -49,31 +49,71 @@ if [ -d "$DATADIR/futures" ]; then
 fi
 
 # 驗證資料（用 venv python，不要用 python3，cron 環境的 python3 沒有 pandas）
-# 把 python 程式碼先寫到暫存檔再執行（避免 bash 雙引號 + python f-string 跳脫衝突）
+# 改寫: 把驗證邏輯做成獨立 script 避免 heredoc + bash 變數 expand + python f-string 衝突
 echo ""
 echo "✅ 驗證資料:"
 if [ ! -x "$FREQTRADE_VENV_PY" ]; then
   echo "  ⚠️ 找不到 venv python: $FREQTRADE_VENV_PY"
+  echo "  (PATH=$PATH)"
 else
-  for pair in BTC ETH SOL XRP BNB; do
-    FILE="$DATADIR/${pair}_USDT_USDT-5m-futures.feather"
-    if [ -f "$FILE" ]; then
-      TMPPY=$(mktemp /tmp/verify_feather.XXXXXX.py)
-      cat > "$TMPPY" <<PYEOF
-import pandas as pd
-df = pd.read_feather('${FILE}')
-print(f'  ${pair}: {len(df)} rows, {df.iloc[0]["date"]} ~ {df.iloc[-1]["date"]}')
+  # 除錯: 印出 venv python 跟 pandas 版本
+  "$FREQTRADE_VENV_PY" -c "import sys,pandas,pyarrow; print(f'  [debug] py={sys.version.split()[0]} pandas={pandas.__version__} pyarrow={pyarrow.__version__}')" 2>&1 || true
+
+  # 寫一個固定路徑的驗證 script（避免 mktemp 在 cron 環境的 /tmp 權限問題）
+  VERIFY_SCRIPT="/tmp/verify_futures_feathers.py"
+  cat > "$VERIFY_SCRIPT" <<'PYEOF'
+"""Verify daily futures feather files for 5 pairs.
+Usage: verify_futures_feathers.py <datadir> <pair1> <pair2> ...
+Exits 0 if all readable, 1 if any failed.
+"""
+import sys
+import os
+import traceback
+
+def main():
+    if len(sys.argv) < 3:
+        print(f"  [verify] usage error: {len(sys.argv)} args", file=sys.stderr)
+        return 1
+    datadir = sys.argv[1]
+    pairs = sys.argv[2:]
+    failed = 0
+    for pair in pairs:
+        filename = f"{pair}_USDT_USDT-5m-futures.feather"
+        path = os.path.join(datadir, filename)
+        try:
+            import pandas as pd
+            if not os.path.exists(path):
+                print(f"  {pair}: 檔案不存在 ({path})")
+                failed += 1
+                continue
+            df = pd.read_feather(path)
+            first_date = df.iloc[0]['date'] if 'date' in df.columns else 'N/A'
+            last_date = df.iloc[-1]['date'] if 'date' in df.columns else 'N/A'
+            print(f"  {pair}: {len(df)} rows, {first_date} ~ {last_date}")
+        except Exception as exc:
+            print(f"  {pair}: 讀取失敗 ({type(exc).__name__}: {exc})", file=sys.stderr)
+            traceback.print_exc(file=sys.stderr)
+            failed += 1
+    if failed > 0:
+        print(f"  [verify] {failed} pair(s) failed", file=sys.stderr)
+        return 1
+    return 0
+
+if __name__ == "__main__":
+    sys.exit(main())
 PYEOF
-      if "$FREQTRADE_VENV_PY" "$TMPPY" 2>&1; then
-        :
-      else
-        echo "  ${pair}: 讀取失敗 (exit=$?)"
-      fi
-      rm -f "$TMPPY"
-    else
-      echo "  ${pair}: 檔案不存在"
-    fi
-  done
+  chmod +x "$VERIFY_SCRIPT"
+
+  # Run verify script, separate stdout/stderr capture so hermes-cron can preserve
+  # python tracebacks in stderr when delivered to the user.
+  "$FREQTRADE_VENV_PY" "$VERIFY_SCRIPT" "$DATADIR" BTC ETH SOL XRP BNB
+  VERIFY_RC=$?
+
+  if [ $VERIFY_RC -ne 0 ]; then
+    echo "  [verify] 整體失敗 (exit=$VERIFY_RC)"
+  fi
+
+  rm -f "$VERIFY_SCRIPT"
 fi
 
 echo ""
