@@ -1,6 +1,10 @@
 #!/bin/bash
 # 每日下載合約資料（一週）
 # 用法: bash user_data/scripts/utilities/download_futures_daily.sh
+#
+# 部署位置: ~/.hermes/scripts/download_futures_daily.sh (hermes-cron 實際跑的副本)
+# 原始碼:   /home/brian/freqtrade/user_data/scripts/utilities/download_futures_daily.sh
+# ⚠️  改動必須兩個位置都同步，否則 cron 跑的是舊版 (regression risk)
 
 set -e
 
@@ -8,6 +12,9 @@ FREQTRADE_DIR="/home/brian/freqtrade"
 # 明確指定 freqtrade venv 的 python：cron script 環境的 python3 是 /usr/bin/python3
 # 沒有 pandas，會 ModuleNotFoundError，導致驗證區塊全部「讀取失敗」
 FREQTRADE_VENV_PY="$FREQTRADE_DIR/.venv/bin/python3"
+# 明確指定 freqtrade 二進位（防 cron PATH 漂移；新 verify 區塊依賴 venv python 讀 feather）
+FREQTRADE_BIN="$FREQTRADE_DIR/.venv/bin/freqtrade"
+
 CONFIG="$FREQTRADE_DIR/user_data/config/test/config_6.json"
 DATADIR="$FREQTRADE_DIR/user_data/data/bybit/futures"
 TIMEFRAMES="5m"
@@ -26,8 +33,9 @@ echo "=========================================="
 
 # 下載資料（不使用 --prepend，避免合併問題）
 # 改為下載完整資料並覆蓋
-freqtrade download-data \
+$FREQTRADE_BIN download-data \
   --config "$CONFIG" \
+  --userdir "$FREQTRADE_DIR/user_data" \
   --timeframes "$TIMEFRAMES" \
   --timerange "${START_DATE}-${END_DATE}" \
   --pairs $PAIRS \
@@ -50,6 +58,8 @@ fi
 
 # 驗證資料（用 venv python，不要用 python3，cron 環境的 python3 沒有 pandas）
 # 改寫: 把驗證邏輯做成獨立 script 避免 heredoc + bash 變數 expand + python f-string 衝突
+# 舊版用 python3 -c "..." + 雙引號會讓 $pair 被 bash 展開為 BTC，f-string 的 {pair} 變 {BTC}
+# → NameError，被 2>/dev/null 吞掉，5/5 全顯示「讀取失敗」（但資料其實是好的）
 echo ""
 echo "✅ 驗證資料:"
 if [ ! -x "$FREQTRADE_VENV_PY" ]; then
