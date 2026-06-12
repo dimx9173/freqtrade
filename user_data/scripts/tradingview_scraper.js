@@ -7,16 +7,20 @@
  * Usage: node tradingview_scraper.js [--pages N]
  */
 
-const { chromium } = require('/tmp/node_modules/playwright');
+const { chromium } = require('/home/brian/.npm/_npx/a80a913f4f8f2557/node_modules/playwright');
 
 const CHROME_PATH = '/home/brian/.cache/puppeteer/chrome/linux-146.0.7680.153/chrome-linux64/chrome';
 const OUT_DIR = '/home/brian/freqtrade/user_data/.tv_scout';
 const SCRAPE_LIST_PATH = OUT_DIR + '/tv_scripts_page.json';
 
-const PAGE_URL = 'https://www.tradingview.com/scripts/?sort=recent_extended';
+// P1-IMPROVE (2026-06-12): switch to strategy-only filter that TradingView actually honors.
+// Verified by direct fetch: 19 scripts, ~63% have "Strategy" in slug (vs 0% on default recent page).
+// Note: TradingView's script_type=strategies filter does NOT paginate (page=2 returns same 19),
+// so bumping pages gives a slightly deeper recent pool but limited diversity.
+const PAGE_URL = 'https://www.tradingview.com/scripts/?script-source-pub=public&sort=recent_extended&script_type=strategies';
 const args = process.argv.slice(2);
 const pagesArg = args.find(function(a) { return a.startsWith('--pages='); });
-const PAGES_TO_SCRAPE = pagesArg ? parseInt(pagesArg.split('=')[1]) : 1;
+const PAGES_TO_SCRAPE = pagesArg ? parseInt(pagesArg.split('=')[1]) : 3;
 
 async function scrapeTVScripts() {
   console.log('=== TradingView Scripts Scraper (Playwright) ===\n');
@@ -74,12 +78,18 @@ async function scrapeTVScripts() {
 
   console.log(`\n=== Total: ${unique.length} unique scripts (${PAGES_TO_SCRAPE} page(s)) ===\n`);
 
-  // Save full URL list (append to existing if any)
+  // Save full URL list (new URLs at FRONT so Phase 2 head-N picks the freshest).
+  // P1-IMPROVE (2026-06-12): was appending new to end of existing, but Phase 2 uses
+  // `head -N TV_PHASE2_MAX` to grab freshest URLs, so append-at-end meant the head
+  // always re-grabbed the OLDEST entries (mostly already-PRO or already-converted).
   const fs = require('fs');
   const existing = fs.existsSync(SCRAPE_LIST_PATH) ? JSON.parse(fs.readFileSync(SCRAPE_LIST_PATH, 'utf8')) : [];
   const existingUrls = new Set(existing.map(s => typeof s === 'string' ? s : s.url));
   const newScripts = unique.filter(s => !existingUrls.has(s.url));
-  const combined = [...existing.map(s => typeof s === 'string' ? { url: s, page: 0 } : s), ...newScripts.map(s => ({ url: s.url, page: s.page }))];
+  const combined = [
+    ...newScripts.map(s => ({ url: s.url, page: s.page })),
+    ...existing.map(s => typeof s === 'string' ? { url: s, page: 0 } : s)
+  ];
 
   fs.writeFileSync(SCRAPE_LIST_PATH, JSON.stringify(combined, null, 2));
   console.log(`Saved to ${SCRAPE_LIST_PATH}`);
