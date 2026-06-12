@@ -20,7 +20,7 @@ python3 -m freqtrade hyperopt \
     --job-workers -1 \
     --disable-param-export
 
-# Sell space optimization  
+# Sell space optimization
 echo ""
 echo "Phase 2: Optimizing SELL parameters..."
 python3 -m freqtrade hyperopt \

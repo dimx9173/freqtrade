@@ -24,7 +24,7 @@ for strategy in "${STRATEGIES[@]}"; do
   echo "========================================"
   echo "🚀 Hyperopt: $strategy"
   echo "========================================"
-  
+
   python3 -m freqtrade hyperopt \
     --config "$CONFIG" \
     --strategy "$strategy" \
@@ -35,7 +35,7 @@ for strategy in "${STRATEGIES[@]}"; do
     --spaces buy sell trailing stoploss \
     --epochs "$EPOCHS" \
     2>&1 | tail -40
-  
+
   echo ""
   echo "✅ $strategy Hyperopt completed"
   echo "========================================"

@@ -22,9 +22,9 @@ END_DATES=("20240331" "20240630" "20240930" "20241231" "20260525")
 for i in "${!START_DATES[@]}"; do
     START=${START_DATES[$i]}
     END=${END_DATES[$i]}
-    
+
     echo "Downloading $START to $END..." | tee -a "$LOGFILE"
-    
+
     freqtrade download-data \
         --exchange bybit \
         --trading-mode futures \
@@ -34,7 +34,7 @@ for i in "${!START_DATES[@]}"; do
         --data-format-ohlcv feather \
         --prepend \
         2>&1 | tail -5 | tee -a "$LOGFILE"
-    
+
     sleep 5
 done
 

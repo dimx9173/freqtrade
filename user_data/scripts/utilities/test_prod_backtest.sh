@@ -34,25 +34,25 @@ run_backtest() {
   local config_id=$2
   local config_file="$CONFIG_PATH/config_${config_id}.json"
   local output_file="$RESULT_DIR/${strategy}_backtest.log"
-  
+
   echo ""
   echo "----------------------------------------"
   echo "Backtesting: $strategy"
   echo "Config: $config_file"
   echo "----------------------------------------"
-  
+
   if [[ ! -f "$config_file" ]]; then
     echo "WARNING: Config not found: $config_file"
     return 1
   fi
-  
+
   python3 -m freqtrade backtesting \
     --config "$config_file" \
     --strategy "$strategy" \
     --strategy-path "$STRATEGY_PATH" \
     --timerange "$TIMERANGE" \
     2>&1 | tee "$output_file"
-  
+
   # 提取關鍵結果
   echo ""
   echo "📊 $strategy 結果摘要:"
@@ -77,7 +77,7 @@ else
       break
     fi
   done
-  
+
   if [[ -z "$config_id" ]]; then
     echo "ERROR: Unknown strategy: $STRATEGY"
     echo "可用策略:"
@@ -87,7 +87,7 @@ else
     done
     exit 1
   fi
-  
+
   run_backtest "$STRATEGY" "$config_id"
 fi
 

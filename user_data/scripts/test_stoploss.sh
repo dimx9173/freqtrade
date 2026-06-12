@@ -11,7 +11,7 @@ echo "=========================================="
 for stoploss in -0.03 -0.05 -0.10; do
     echo ""
     echo "Testing stoploss: $stoploss"
-    
+
     # Create temp config
     python3 -c "
 import json
@@ -21,7 +21,7 @@ config['stoploss'] = $stoploss
 with open(f'user_data/config/test/config_futures_1x_sl${stoploss}.json', 'w') as f:
     json.dump(config, f, indent=2)
 "
-    
+
     # Run backtest
     python3 -m freqtrade backtest \
         --strategy ElliotV5_SMA_ninja \
@@ -30,7 +30,7 @@ with open(f'user_data/config/test/config_futures_1x_sl${stoploss}.json', 'w') as
         --export trades \
         --cache=day \
         2>&1 | grep -E "Total profit %|Win %|Sharpe|Trades"
-        
+
 done
 
 echo ""

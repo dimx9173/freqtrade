@@ -20,7 +20,7 @@ python3 -m freqtrade hyperopt \
     --hyperopt-loss SharpeHyperOptLoss \
     --job-workers -1
 
-# Strategy 2: BB_RPB_TSL_BI - Core parameter optimization  
+# Strategy 2: BB_RPB_TSL_BI - Core parameter optimization
 echo ""
 echo "Phase 2: BB_RPB_TSL_BI Hyperopt (Key parameters)"
 python3 -m freqtrade hyperopt \

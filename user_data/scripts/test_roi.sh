@@ -20,14 +20,14 @@ roi_configs = [
 
 for name, roi in roi_configs:
     print(f"\nTesting ROI: {name} - {roi}")
-    
+
     # Create temp config
     with open('user_data/config/test/config_futures_1x.json') as f:
         config = json.load(f)
     config['minimal_roi'] = roi
     with open(f'user_data/config/test/config_futures_1x_roi_{name}.json', 'w') as f:
         json.dump(config, f, indent=2)
-    
+
     # Run backtest
     result = subprocess.run([
         'python3', '-m', 'freqtrade', 'backtest',
@@ -37,7 +37,7 @@ for name, roi in roi_configs:
         '--export', 'trades',
         '--cache=day'
     ], capture_output=True, text=True)
-    
+
     # Extract key metrics
     for line in result.stdout.split('\n'):
         if any(x in line for x in ['Total profit %', 'Win %', 'Sharpe', 'Trades']):

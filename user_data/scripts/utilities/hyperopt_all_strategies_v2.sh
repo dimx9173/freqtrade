@@ -24,7 +24,7 @@ for strategy in "${STRATEGIES[@]}"; do
   echo "========================================"
   echo "🚀 Hyperopt: $strategy"
   echo "========================================"
-  
+
   # 使用單一 worker 減少記憶體
   python3 -m freqtrade hyperopt \
     --config "$CONFIG" \
@@ -37,7 +37,7 @@ for strategy in "${STRATEGIES[@]}"; do
     --epochs "$EPOCHS" \
     -j 1 \
     2>&1 | tail -30
-  
+
   echo ""
   echo "✅ $strategy Hyperopt completed"
   echo "========================================"

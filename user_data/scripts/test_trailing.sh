@@ -20,14 +20,14 @@ trailing_configs = [
 
 for name, config in trailing_configs:
     print(f"\nTesting Trailing: {name} - {config}")
-    
+
     # Create temp config
     with open('user_data/config/test/config_futures_1x.json') as f:
         base_config = json.load(f)
     base_config.update(config)
     with open(f'user_data/config/test/config_futures_1x_trail_{name}.json', 'w') as f:
         json.dump(base_config, f, indent=2)
-    
+
     # Run backtest
     result = subprocess.run([
         'python3', '-m', 'freqtrade', 'backtest',
@@ -37,7 +37,7 @@ for name, config in trailing_configs:
         '--export', 'trades',
         '--cache=day'
     ], capture_output=True, text=True)
-    
+
     for line in result.stdout.split('\n'):
         if any(x in line for x in ['Total profit %', 'Win %', 'Sharpe', 'Trades']):
             print(line.strip())

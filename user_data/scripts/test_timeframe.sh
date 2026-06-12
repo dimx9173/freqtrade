@@ -12,7 +12,7 @@ for tf in 3m 15m 1h; do
     echo ""
     echo "Testing timeframe: $tf"
     echo "(Note: Need to download data for $tf first)"
-    
+
     # Create temp config
     python3 -c "
 import json

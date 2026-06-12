@@ -45,10 +45,10 @@ MONTHS=(
 
 for pair in "${PAIRS[@]}"; do
   echo "Downloading $pair..." | tee -a "$LOGFILE"
-  
+
   for month_range in "${MONTHS[@]}"; do
     echo "  Range: $month_range" | tee -a "$LOGFILE"
-    
+
     freqtrade download-data \
       --exchange bybit \
       --trading-mode futures \
@@ -58,7 +58,7 @@ for pair in "${PAIRS[@]}"; do
       --data-format-ohlcv feather \
       --prepend \
       2>&1 | tail -3 | tee -a "$LOGFILE"
-    
+
     sleep 3
   done
 done

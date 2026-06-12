@@ -70,7 +70,7 @@ if os.path.exists('user_data/test_results/stoploss_test.log'):
             trades = re.search(r'Trades\s+(\d+)', section)
             winrate = re.search(r'Win %\s+([\d.]+)', section)
             sharpe = re.search(r'Sharpe\s+([-\d.]+)', section)
-            
+
             print(f"  Stoploss {stoploss}:")
             if profit: print(f"    Profit: {profit.group(1)}%")
             if trades: print(f"    Trades: {trades.group(1)}")
@@ -90,7 +90,7 @@ if os.path.exists('user_data/test_results/roi_test.log'):
             profit = re.search(r'Total profit %\s+([-\d.]+)', section)
             trades = re.search(r'Trades\s+(\d+)', section)
             winrate = re.search(r'Win %\s+([\d.]+)', section)
-            
+
             print(f"  ROI {roi_name}:")
             if profit: print(f"    Profit: {profit.group(1)}%")
             if trades: print(f"    Trades: {trades.group(1)}")
@@ -109,7 +109,7 @@ if os.path.exists('user_data/test_results/trailing_test.log'):
             profit = re.search(r'Total profit %\s+([-\d.]+)', section)
             trades = re.search(r'Trades\s+(\d+)', section)
             winrate = re.search(r'Win %\s+([\d.]+)', section)
-            
+
             print(f"  Trailing {trail_name}:")
             if profit: print(f"    Profit: {profit.group(1)}%")
             if trades: print(f"    Trades: {trades.group(1)}")

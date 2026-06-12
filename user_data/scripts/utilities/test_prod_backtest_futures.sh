@@ -35,18 +35,18 @@ run_backtest() {
   local base_config="$CONFIG_PATH/config_${config_id}.json"
   local futures_config="/tmp/futures_config_${config_id}.json"
   local output_file="$RESULT_DIR/${strategy}_backtest.log"
-  
+
   echo ""
   echo "----------------------------------------"
   echo "Futures Backtesting: $strategy"
   echo "Base Config: $base_config"
   echo "----------------------------------------"
-  
+
   if [[ ! -f "$base_config" ]]; then
     echo "WARNING: Config not found: $base_config"
     return 1
   fi
-  
+
   # 創建合約 config
   python3 << PYEOF
 import json
@@ -76,14 +76,14 @@ with open('$futures_config', 'w') as f:
     json.dump(c, f, indent=2)
 print('Futures config created')
 PYEOF
-  
+
   python3 -m freqtrade backtesting \
     --config "$futures_config" \
     --strategy "$strategy" \
     --strategy-path "$STRATEGY_PATH" \
     --timerange "$TIMERANGE" \
     2>&1 | tee "$output_file"
-  
+
   # 提取關鍵結果
   echo ""
   echo "📊 $strategy 合約結果摘要:"
@@ -107,12 +107,12 @@ else
       break
     fi
   done
-  
+
   if [[ -z "$config_id" ]]; then
     echo "ERROR: Unknown strategy: $STRATEGY"
     exit 1
   fi
-  
+
   run_backtest "$STRATEGY" "$config_id"
 fi
 
