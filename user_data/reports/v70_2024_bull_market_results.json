@@ -1,0 +1,56 @@
+{
+  "period": "2024-01-01 to 2024-12-31",
+  "initial_capital": 10000,
+  "final_capital": 3354.642705408421,
+  "total_return": -66.45357294591578,
+  "total_trades": 1535,
+  "win_rate": 38.371335504886,
+  "regime_distribution": {
+    "sideways": {
+      "candles": 18216,
+      "price_change_pct": 119.12064582941065
+    },
+    "volatile": {
+      "candles": 8822,
+      "price_change_pct": 116.54629445844678
+    },
+    "uptrend": {
+      "candles": 4516,
+      "price_change_pct": 120.05587554162376
+    },
+    "downtrend": {
+      "candles": 3486,
+      "price_change_pct": 106.09573700641617
+    }
+  },
+  "regime_stats": {
+    "uptrend": {
+      "trades": 345,
+      "wins": 132,
+      "losses": 213,
+      "win_rate": 38.26086956521739,
+      "profit": -1821.9362003783067
+    },
+    "downtrend": {
+      "trades": 253,
+      "wins": 85,
+      "losses": 168,
+      "win_rate": 33.59683794466403,
+      "profit": -1874.086027008267
+    },
+    "sideways": {
+      "trades": 938,
+      "wins": 372,
+      "losses": 566,
+      "win_rate": 39.6588486140725,
+      "profit": -2949.3350672050137
+    },
+    "volatile": {
+      "trades": 0,
+      "wins": 0,
+      "losses": 0,
+      "win_rate": 0,
+      "profit": 0
+    }
+  }
+}

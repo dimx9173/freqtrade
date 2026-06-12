@@ -1,0 +1,12 @@
+{
+  "strategy": "d1_wider_r",
+  "return": 5.214,
+  "trades": 135,
+  "win_rate": 49.63,
+  "r_ratio": 1.202,
+  "expectancy": 0.0386,
+  "dd": 10.43,
+  "vs_v70": 7.094,
+  "wins": 67,
+  "losses": 68
+}

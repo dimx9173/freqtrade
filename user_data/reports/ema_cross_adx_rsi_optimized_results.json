@@ -1,0 +1,13 @@
+{
+  "strategy": "EMA_Cross_ADX_RSI_Optimized",
+  "period": "2024-01-16 to 2024-04-30",
+  "initial_capital": 10000,
+  "final_capital": 8805.93542667948,
+  "total_return": -11.940645733205201,
+  "vs_v70_baseline": -1.88,
+  "difference_vs_v70": -10.060645733205202,
+  "total_trades": 27,
+  "long_trades": 6,
+  "short_trades": 21,
+  "win_rate": 22.22222222222222
+}

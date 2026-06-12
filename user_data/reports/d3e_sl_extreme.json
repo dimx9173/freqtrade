@@ -1,0 +1,54 @@
+[
+  {
+    "return": 17.957,
+    "trades": 141,
+    "win_rate": 54.61,
+    "r_ratio": 1.315,
+    "expectancy": 0.1274,
+    "dd": 16.69,
+    "wins": 77,
+    "losses": 64,
+    "final_capital": 1179.57,
+    "label": "EMA21_50_SL1.5",
+    "type": "reference"
+  },
+  {
+    "return": 23.574,
+    "trades": 135,
+    "win_rate": 57.04,
+    "r_ratio": 1.432,
+    "expectancy": 0.1746,
+    "dd": 20.0,
+    "wins": 77,
+    "losses": 58,
+    "final_capital": 1235.74,
+    "label": "EMA21_50_SL4",
+    "type": "extreme_sl"
+  },
+  {
+    "return": 22.875,
+    "trades": 135,
+    "win_rate": 57.04,
+    "r_ratio": 1.398,
+    "expectancy": 0.1694,
+    "dd": 19.55,
+    "wins": 77,
+    "losses": 58,
+    "final_capital": 1228.75,
+    "label": "EMA21_50_SL5",
+    "type": "extreme_sl"
+  },
+  {
+    "return": 24.191,
+    "trades": 135,
+    "win_rate": 57.04,
+    "r_ratio": 1.462,
+    "expectancy": 0.1792,
+    "dd": 20.4,
+    "wins": 77,
+    "losses": 58,
+    "final_capital": 1241.91,
+    "label": "EMA21_50_SL6",
+    "type": "extreme_sl"
+  }
+]

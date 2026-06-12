@@ -1,0 +1,12 @@
+{
+  "strategy": "d4_both_dirs",
+  "return": 8.855,
+  "trades": 259,
+  "win_rate": 49.81,
+  "r_ratio": 1.25,
+  "expectancy": 0.0342,
+  "dd": 9.83,
+  "vs_v70": 10.735,
+  "wins": 129,
+  "losses": 130
+}

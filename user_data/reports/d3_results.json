@@ -1,0 +1,12 @@
+{
+  "strategy": "d3_short_only",
+  "return": 15.287,
+  "trades": 147,
+  "win_rate": 53.06,
+  "r_ratio": 1.3,
+  "expectancy": 0.104,
+  "dd": 13.93,
+  "vs_v70": 17.167,
+  "wins": 78,
+  "losses": 69
+}

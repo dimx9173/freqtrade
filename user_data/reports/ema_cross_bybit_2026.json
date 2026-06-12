@@ -1,0 +1,11 @@
+{
+  "strategy": "EMA_Cross_ADX_RSI_LongOnly",
+  "period": "2026-01-16 to 2026-04-30",
+  "data": "Bybit BTC/USDT futures 15m",
+  "total_return": 13.04729258920288,
+  "trades": 131,
+  "win_rate": 51.14503816793893,
+  "drawdown_pct": 19.83614673569621,
+  "vs_v70": 14.927292589202882,
+  "v70_baseline": -1.88
+}

@@ -1,0 +1,30 @@
+{
+  "uptrend": {
+    "total_return": 5.825051501335656,
+    "final_capital": 10582.505150133566,
+    "num_trades": 47,
+    "win_rate": 65.95744680851064,
+    "max_drawdown": -24.975962965999464
+  },
+  "downtrend": {
+    "total_return": -36.123443440173396,
+    "final_capital": 6387.65565598266,
+    "num_trades": 51,
+    "win_rate": 54.90196078431373,
+    "max_drawdown": -44.2170340531044
+  },
+  "sideways": {
+    "total_return": 10.989091768112994,
+    "final_capital": 11098.9091768113,
+    "num_trades": 35,
+    "win_rate": 57.14285714285714,
+    "max_drawdown": -7.241827393268535
+  },
+  "full_year": {
+    "total_return": -21.238547720001772,
+    "final_capital": 7876.145227999823,
+    "num_trades": 199,
+    "win_rate": 62.311557788944725,
+    "max_drawdown": -58.9889499986247
+  }
+}

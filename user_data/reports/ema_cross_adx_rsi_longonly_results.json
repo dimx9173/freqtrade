@@ -1,0 +1,11 @@
+{
+  "strategy": "EMA_Cross_ADX_RSI_LongOnly",
+  "period": "2026-01-16 to 2026-04-30",
+  "initial_capital": 10000,
+  "final_capital": 10000,
+  "total_return": 0.0,
+  "vs_v70_baseline": -1.88,
+  "difference_vs_v70": 1.88,
+  "total_trades": 0,
+  "win_rate": 0.0
+}

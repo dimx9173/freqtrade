@@ -1,0 +1,12 @@
+{
+  "strategy": "d2_strong_trend",
+  "return": 6.788,
+  "trades": 81,
+  "win_rate": 51.85,
+  "r_ratio": 1.348,
+  "expectancy": 0.0838,
+  "dd": 6.82,
+  "vs_v70": 8.668,
+  "wins": 42,
+  "losses": 39
+}

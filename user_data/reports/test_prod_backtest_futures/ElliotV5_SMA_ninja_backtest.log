@@ -1,0 +1,70 @@
+2026-05-25 16:21:37,522 - freqtrade - INFO - freqtrade 2026.3
+2026-05-25 16:21:37,707 - numexpr.utils - INFO - NumExpr defaulting to 16 threads.
+/home/brian/project/hermes-agent/.venv/lib/python3.11/site-packages/requests/__init__.py:113: RequestsDependencyWarning: urllib3 (2.6.3) or chardet (7.4.3)/charset_normalizer (3.4.7) doesn't match a supported version!
+  warnings.warn(
+2026-05-25 16:21:38,807 - freqtrade.configuration.load_config - INFO - Using config: /tmp/futures_config_6.json ...
+2026-05-25 16:21:38,810 - freqtrade.loggers - INFO - Enabling colorized output.
+2026-05-25 16:21:38,811 - freqtrade.loggers - INFO - Logfile configured
+2026-05-25 16:21:38,811 - freqtrade.loggers - INFO - Verbosity set to 0
+2026-05-25 16:21:38,812 - freqtrade.configuration.configuration - INFO - Using additional Strategy lookup path: user_data/strategies/test/prod
+2026-05-25 16:21:38,812 - freqtrade.configuration.configuration - INFO - Using max_open_trades: None ...
+2026-05-25 16:21:38,813 - freqtrade.configuration.configuration - INFO - Parameter --timerange detected: 20250824-20260524 ...
+2026-05-25 16:21:38,813 - freqtrade.configuration.configuration - INFO - Using user-data directory: /home/brian/freqtrade/user_data ...
+2026-05-25 16:21:38,814 - freqtrade.configuration.configuration - INFO - Using data directory: /home/brian/freqtrade/user_data/data/bybit ...
+2026-05-25 16:21:38,814 - freqtrade.configuration.configuration - INFO - Parameter --cache=day detected ...
+2026-05-25 16:21:38,815 - freqtrade.configuration.configuration - INFO - Filter trades by timerange: 20250824-20260524
+2026-05-25 16:21:38,815 - freqtrade.exchange.check_exchange - INFO - Checking exchange...
+2026-05-25 16:21:38,824 - freqtrade.exchange.check_exchange - INFO - Exchange "bybit" is officially supported by the Freqtrade development team.
+2026-05-25 16:21:38,824 - freqtrade.configuration.configuration - INFO - Using pairlist from configuration.
+2026-05-25 16:21:38,825 - freqtrade.configuration.config_validation - INFO - Validating configuration ...
+2026-05-25 16:21:38,827 - freqtrade.commands.optimize_commands - INFO - Starting freqtrade in Backtesting mode
+2026-05-25 16:21:38,828 - freqtrade.exchange.exchange - INFO - Instance is running with dry_run enabled
+2026-05-25 16:21:38,828 - freqtrade.exchange.exchange - INFO - Using CCXT 4.5.32
+2026-05-25 16:21:38,828 - freqtrade.exchange.exchange - INFO - Applying additional ccxt config: {'options': {'defaultType': 'swap', 'defaultSettle': 'USDT', 'adjustForTimeDifference': True, 
+'recvWindow': 60000}, 'enableRateLimit': True, 'fee': 0.0011}
+2026-05-25 16:21:38,835 - freqtrade.exchange.exchange - INFO - Applying additional ccxt config: {'options': {'defaultType': 'swap', 'defaultSettle': 'USDT', 'adjustForTimeDifference': True, 
+'recvWindow': 60000}, 'enableRateLimit': True, 'fee': 0.0011, 'rateLimit': 50}
+2026-05-25 16:21:38,842 - freqtrade.exchange.exchange - INFO - Using Exchange "Bybit"
+2026-05-25 16:21:41,495 - freqtrade.resolvers.exchange_resolver - INFO - Using resolved exchange 'Bybit'...
+2026-05-25 16:21:41,505 - freqtrade.resolvers.iresolver - INFO - Using resolved strategy ElliotV5_SMA_ninja from '/home/brian/freqtrade/user_data/strategies/test/prod/ElliotV5_SMA_ninja.py'...
+2026-05-25 16:21:41,506 - freqtrade.strategy.hyper - INFO - Loading parameters from file /home/brian/freqtrade/user_data/strategies/test/prod/ElliotV5_SMA_ninja.json
+2026-05-25 16:21:41,506 - freqtrade.resolvers.strategy_resolver - INFO - Override strategy 'timeframe' with value from the configuration: 5m.
+2026-05-25 16:21:41,506 - freqtrade.resolvers.strategy_resolver - INFO - Override strategy 'stoploss' with value from the configuration: -0.05.
+2026-05-25 16:21:41,507 - freqtrade.resolvers.strategy_resolver - INFO - Override strategy 'trailing_stop' with value from the configuration: True.
+2026-05-25 16:21:41,507 - freqtrade.resolvers.strategy_resolver - INFO - Override strategy 'order_types' with value from the configuration: {'entry': 'market', 'exit': 'market', 'emergency_exit': 
+'market', 'force_entry': 'market', 'force_exit': 'market', 'stoploss': 'market', 'stoploss_on_exchange': False, 'stoploss_on_exchange_interval': 60}.
+2026-05-25 16:21:41,507 - freqtrade.resolvers.strategy_resolver - INFO - Override strategy 'stake_currency' with value from the configuration: USDT.
+2026-05-25 16:21:41,507 - freqtrade.resolvers.strategy_resolver - INFO - Override strategy 'stake_amount' with value from the configuration: 50.
+2026-05-25 16:21:41,508 - freqtrade.resolvers.strategy_resolver - INFO - Override strategy 'unfilledtimeout' with value from the configuration: {'entry': 10, 'exit': 10, 'exit_timeout_count': 0, 
+'unit': 'minutes'}.
+2026-05-25 16:21:41,508 - freqtrade.resolvers.strategy_resolver - INFO - Override strategy 'ignore_buying_expired_candle_after' with value from the configuration: 30.
+2026-05-25 16:21:41,508 - freqtrade.resolvers.strategy_resolver - INFO - Strategy using minimal_roi: {'0': 0.215, '40': 0.132, '87': 0.086, '201': 0.03}
+2026-05-25 16:21:41,508 - freqtrade.resolvers.strategy_resolver - INFO - Strategy using timeframe: 5m
+2026-05-25 16:21:41,509 - freqtrade.resolvers.strategy_resolver - INFO - Strategy using stoploss: -0.05
+2026-05-25 16:21:41,509 - freqtrade.resolvers.strategy_resolver - INFO - Strategy using trailing_stop: True
+2026-05-25 16:21:41,509 - freqtrade.resolvers.strategy_resolver - INFO - Strategy using trailing_stop_positive: 0.005
+2026-05-25 16:21:41,509 - freqtrade.resolvers.strategy_resolver - INFO - Strategy using trailing_stop_positive_offset: 0.03
+2026-05-25 16:21:41,510 - freqtrade.resolvers.strategy_resolver - INFO - Strategy using trailing_only_offset_is_reached: True
+2026-05-25 16:21:41,510 - freqtrade.resolvers.strategy_resolver - INFO - Strategy using use_custom_stoploss: False
+2026-05-25 16:21:41,510 - freqtrade.resolvers.strategy_resolver - INFO - Strategy using process_only_new_candles: True
+2026-05-25 16:21:41,511 - freqtrade.resolvers.strategy_resolver - INFO - Strategy using order_types: {'entry': 'market', 'exit': 'market', 'emergency_exit': 'market', 'force_entry': 'market', 
+'force_exit': 'market', 'stoploss': 'market', 'stoploss_on_exchange': False, 'stoploss_on_exchange_interval': 60}
+2026-05-25 16:21:41,511 - freqtrade.resolvers.strategy_resolver - INFO - Strategy using order_time_in_force: {'entry': 'GTC', 'exit': 'GTC'}
+2026-05-25 16:21:41,511 - freqtrade.resolvers.strategy_resolver - INFO - Strategy using stake_currency: USDT
+2026-05-25 16:21:41,512 - freqtrade.resolvers.strategy_resolver - INFO - Strategy using stake_amount: 50
+2026-05-25 16:21:41,512 - freqtrade.resolvers.strategy_resolver - INFO - Strategy using startup_candle_count: 2000
+2026-05-25 16:21:41,512 - freqtrade.resolvers.strategy_resolver - INFO - Strategy using unfilledtimeout: {'entry': 10, 'exit': 10, 'exit_timeout_count': 0, 'unit': 'minutes'}
+2026-05-25 16:21:41,513 - freqtrade.resolvers.strategy_resolver - INFO - Strategy using use_exit_signal: True
+2026-05-25 16:21:41,513 - freqtrade.resolvers.strategy_resolver - INFO - Strategy using exit_profit_only: False
+2026-05-25 16:21:41,513 - freqtrade.resolvers.strategy_resolver - INFO - Strategy using ignore_roi_if_entry_signal: True
+2026-05-25 16:21:41,513 - freqtrade.resolvers.strategy_resolver - INFO - Strategy using exit_profit_offset: 0.01
+2026-05-25 16:21:41,514 - freqtrade.resolvers.strategy_resolver - INFO - Strategy using disable_dataframe_checks: False
+2026-05-25 16:21:41,514 - freqtrade.resolvers.strategy_resolver - INFO - Strategy using ignore_buying_expired_candle_after: 30
+2026-05-25 16:21:41,514 - freqtrade.resolvers.strategy_resolver - INFO - Strategy using position_adjustment_enable: False
+2026-05-25 16:21:41,515 - freqtrade.resolvers.strategy_resolver - INFO - Strategy using max_entry_position_adjustment: -1
+2026-05-25 16:21:41,515 - freqtrade.resolvers.strategy_resolver - INFO - Strategy using max_open_trades: inf
+2026-05-25 16:21:41,515 - freqtrade.configuration.config_validation - INFO - Validating configuration ...
+2026-05-25 16:21:41,519 - freqtrade.resolvers.iresolver - INFO - Using resolved pairlist RemotePairList from '/home/brian/freqtrade/freqtrade/plugins/pairlist/RemotePairList.py'...
+2026-05-25 16:21:41,519 - freqtrade.plugins.pairlistmanager - WARNING - Pairlist Handlers RemotePairList will introduce a lookahead bias to your backtest results, as they use today's data - which 
+inheritly suffers from 'winner bias'.
+2026-05-25 16:21:41,532 - freqtrade - ERROR - No pair in whitelist.

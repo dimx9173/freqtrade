@@ -1,0 +1,74 @@
+[
+  {
+    "name": "D2_baseline",
+    "return": 6.788,
+    "trades": 81,
+    "win_rate": 51.85,
+    "r_ratio": 1.348,
+    "expectancy": 0.0838,
+    "dd": 6.82,
+    "vs_d2_baseline": -0.002,
+    "wins": 42,
+    "losses": 39
+  },
+  {
+    "name": "D2A_bidir",
+    "return": 18.315,
+    "trades": 181,
+    "win_rate": 52.49,
+    "r_ratio": 1.348,
+    "expectancy": 0.1012,
+    "dd": 16.13,
+    "vs_d2_baseline": 11.525,
+    "wins": 95,
+    "losses": 86
+  },
+  {
+    "name": "D2B_strong35",
+    "return": 3.399,
+    "trades": 54,
+    "win_rate": 53.7,
+    "r_ratio": 1.198,
+    "expectancy": 0.0629,
+    "dd": 3.82,
+    "vs_d2_baseline": -3.391,
+    "wins": 29,
+    "losses": 25
+  },
+  {
+    "name": "D2C_widerTP",
+    "return": 6.873,
+    "trades": 81,
+    "win_rate": 51.85,
+    "r_ratio": 1.355,
+    "expectancy": 0.0849,
+    "dd": 6.9,
+    "vs_d2_baseline": 0.083,
+    "wins": 42,
+    "losses": 39
+  },
+  {
+    "name": "D2D_tighterSL",
+    "return": 5.911,
+    "trades": 82,
+    "win_rate": 51.22,
+    "r_ratio": 1.312,
+    "expectancy": 0.0721,
+    "dd": 6.22,
+    "vs_d2_baseline": -0.879,
+    "wins": 42,
+    "losses": 40
+  },
+  {
+    "name": "D2E_bidir35",
+    "return": 11.662,
+    "trades": 133,
+    "win_rate": 51.13,
+    "r_ratio": 1.333,
+    "expectancy": 0.0877,
+    "dd": 13.12,
+    "vs_d2_baseline": 4.872,
+    "wins": 68,
+    "losses": 65
+  }
+]

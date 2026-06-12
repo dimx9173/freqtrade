@@ -1,0 +1,3 @@
+NASOSv5_mod3 Futures 1x Stoploss Sweep Report
+Timerange: 20250501-20260525 | Strategy: NASOSv5_mod3 | Pairlist: 23 pairs
+============================================================

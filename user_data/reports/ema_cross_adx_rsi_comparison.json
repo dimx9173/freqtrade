@@ -1,0 +1,27 @@
+{
+  "backtest_period": "2024-01-16 to 2024-04-30",
+  "v70_baseline": -1.88,
+  "variants": {
+    "bidirectional": {
+      "return": -1.1583513245311587,
+      "trades": 37,
+      "win_rate": 35.13513513513514,
+      "vs_v70": 0.7216486754688411
+    },
+    "long_only": {
+      "return": 10.680273628425583,
+      "trades": 24,
+      "win_rate": 58.333333333333336,
+      "vs_v70": 12.560273628425584
+    },
+    "trend_confirmation": {
+      "return": -10.17857265487075,
+      "trades": 71,
+      "win_rate": 25.352112676056336,
+      "vs_v70": -8.29857265487075
+    }
+  },
+  "best_variant": "long_only",
+  "best_return": 10.680273628425583,
+  "best_vs_v70": 12.560273628425584
+}
