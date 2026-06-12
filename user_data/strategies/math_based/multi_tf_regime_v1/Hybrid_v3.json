@@ -1,0 +1,55 @@
+{
+  "strategy_name": "Hybrid_v3",
+  "params": {
+    "roi": {
+      "0": 0.216,
+      "50": 0.03,
+      "131": 0.019,
+      "164": 0.0
+    },
+    "trailing": {
+      "trailing_stop": true,
+      "trailing_stop_positive": 0.107,
+      "trailing_stop_positive_offset": 0.12,
+      "trailing_only_offset_is_reached": false
+    },
+    "max_open_trades": {
+      "max_open_trades": 3
+    },
+    "buy": {
+      "buy_adx": 13,
+      "buy_bb_delta": 0.025,
+      "buy_bb_factor": 0.999,
+      "buy_bb_width": 0.095,
+      "buy_bb_width_1h": 1.074,
+      "buy_cci": -116,
+      "buy_cci_length": 25,
+      "buy_closedelta": 13.494,
+      "buy_closedelta_local_dip": 13.717,
+      "buy_crsi_local_dip": 10,
+      "buy_ema_diff": 0.024,
+      "buy_ema_diff_local_dip": 0.024,
+      "buy_ema_high": 0.968,
+      "buy_ema_high_2": 1.087,
+      "buy_ema_high_local_dip": 1.084,
+      "buy_ema_low": 0.935,
+      "buy_ema_low_2": 0.97,
+      "buy_ewo": -5.001,
+      "buy_ewo_high_2": 4.179,
+      "buy_rmi": 49,
+      "buy_rmi_length": 17,
+      "buy_roc_1h": 4,
+      "buy_rsi": 23,
+      "buy_rsi_ewo_2": 35,
+      "buy_rsi_fast": 44,
+      "buy_rsi_fast_ewo_2": 45,
+      "buy_rsi_local_dip": 20,
+      "buy_srsi_fk": 32
+    },
+    "stoploss": {
+      "stoploss": -0.288
+    }
+  },
+  "ft_stratparam_v": 1,
+  "export_time": "2026-06-06 01:33:42.974936+00:00"
+}
