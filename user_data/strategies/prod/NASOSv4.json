@@ -2,9 +2,9 @@
   "strategy_name": "NASOSv4",
   "params": {
     "buy": {
-      "base_nb_candles_buy": 17,
-      "lookback_candles": 5,
-      "profit_threshold": 1.002,
+      "base_nb_candles_buy": 4,
+      "lookback_candles": 10,
+      "profit_threshold": 1.009,
       "ewo_high": 2.403,
       "ewo_high_2": -5.585,
       "ewo_low": -14.378,
@@ -13,9 +13,9 @@
       "rsi_buy": 72
     },
     "sell": {
-      "base_nb_candles_sell": 20,
-      "high_offset": 1.066,
-      "high_offset_2": 1.086
+      "base_nb_candles_sell": 18,
+      "high_offset": 1.076,
+      "high_offset_2": 1.193
     },
     "protection": {
       "pHSL": -0.15,

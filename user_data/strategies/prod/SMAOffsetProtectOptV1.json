@@ -1,38 +1,35 @@
 {
   "strategy_name": "SMAOffsetProtectOptV1",
   "params": {
-    "roi": {
-      "0": 100.0
+    "buy": {
+      "base_nb_candles_buy": 57,
+      "ewo_high": 5.469,
+      "ewo_low": -17.608,
+      "low_offset": 0.936,
+      "rsi_buy": 44
     },
-    "stoploss": {
-      "stoploss": -0.1
+    "sell": {
+      "base_nb_candles_sell": 32,
+      "high_offset": 1.05
     },
-    "trailing": {
-      "trailing_stop": true,
-      "trailing_stop_positive": 0.001,
-      "trailing_stop_positive_offset": 0.01,
-      "trailing_only_offset_is_reached": true
+    "protection": {
+      "pHSL": -0.087,
+      "pPF_1": 0.018,
+      "pPF_2": 0.047,
+      "pSL_1": 0.013,
+      "pSL_2": 0.04
     },
     "max_open_trades": {
       "max_open_trades": 3
-    },
-    "buy": {
-      "base_nb_candles_buy": 46,
-      "ewo_high": 2.976,
-      "ewo_low": -10.945,
-      "low_offset": 0.945,
-      "rsi_buy": 57
-    },
-    "sell": {
-      "base_nb_candles_sell": 47,
-      "high_offset": 1.0,
-      "pHSL": -0.083,
-      "pPF_1": 0.019,
-      "pPF_2": 0.054,
-      "pSL_1": 0.016,
-      "pSL_2": 0.068
     }
   },
-  "ft_stratparam_v": 1,
-  "export_time": "2026-05-25 12:21:39.298334+00:00"
+  "minimal_roi": {
+    "0": 100.0
+  },
+  "stoploss": -0.1,
+  "trailing_stop": true,
+  "trailing_stop_positive": 0.001,
+  "trailing_stop_positive_offset": 0.01,
+  "trailing_only_offset_is_reached": true,
+  "max_open_trades": 3
 }

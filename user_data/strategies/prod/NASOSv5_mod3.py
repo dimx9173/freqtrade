@@ -66,7 +66,19 @@ class NASOSv5_mod3(IStrategy):
     }
 
     # ROI table:  # value loaded from strategy
-    minimal_roi = {"0": 0.4}
+    minimal_roi = {
+        "0": 0.06,
+        "30": 0.03,
+        "60": 0.015,
+    }
+
+    # ROI hyperopt parameters
+    roi_t0 = IntParameter(10, 120, default=30, space="roi", optimize=True)
+    roi_t1 = IntParameter(10, 60, default=30, space="roi", optimize=True)
+    roi_t2 = IntParameter(10, 40, default=30, space="roi", optimize=True)
+    roi_p0 = DecimalParameter(0.01, 0.15, default=0.06, decimals=3, space="roi", optimize=True)
+    roi_p1 = DecimalParameter(0.005, 0.08, default=0.03, decimals=3, space="roi", optimize=True)
+    roi_p2 = DecimalParameter(0.0, 0.04, default=0.015, decimals=3, space="roi", optimize=True)
 
     # Stoploss:
     stoploss = -0.3  # value loaded from strategy
@@ -79,7 +91,7 @@ class NASOSv5_mod3(IStrategy):
 
     # SMAOffset
     base_nb_candles_buy = IntParameter(
-        2, 20, default=buy_params["base_nb_candles_buy"], space="buy", optimize=True
+        2, 50, default=buy_params["base_nb_candles_buy"], space="buy", optimize=True
     )
     base_nb_candles_sell = IntParameter(
         2, 25, default=sell_params["base_nb_candles_sell"], space="sell", optimize=True
@@ -91,7 +103,7 @@ class NASOSv5_mod3(IStrategy):
         0.9, 0.99, default=buy_params["low_offset_2"], space="buy", optimize=True
     )
     high_offset = DecimalParameter(
-        0.95, 1.1, default=sell_params["high_offset"], space="sell", optimize=True
+        0.95, 1.1, default=sell_params["high_offset"], space="sell", optimize=False
     )
     high_offset_2 = DecimalParameter(
         0.99, 1.5, default=sell_params["high_offset_2"], space="sell", optimize=True
@@ -102,7 +114,7 @@ class NASOSv5_mod3(IStrategy):
     slow_ewo = 200
 
     lookback_candles = IntParameter(
-        1, 36, default=buy_params["lookback_candles"], space="buy", optimize=True
+        1, 100, default=buy_params["lookback_candles"], space="buy", optimize=True
     )
 
     profit_threshold = DecimalParameter(

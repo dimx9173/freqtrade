@@ -1048,7 +1048,9 @@ class BB_RPB_TSL_BI(IStrategy):
         dataframe.loc[is_nfix_49, "buy_tag"] += "nfix_49 "
 
         if conditions:
-            dataframe.loc[is_additional_check & reduce(lambda x, y: x | y, conditions), "enter_long"] = 1
+            dataframe.loc[
+                is_additional_check & reduce(lambda x, y: x | y, conditions), "enter_long"
+            ] = 1
 
         return dataframe
 

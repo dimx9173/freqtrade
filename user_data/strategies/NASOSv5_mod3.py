@@ -127,12 +127,12 @@ class NASOSv5_mod3(IStrategy):
 
     # Sell signal
     use_exit_signal = True
-    sell_profit_only = False
-    sell_profit_offset = 0.01
-    ignore_roi_if_buy_signal = False
+    exit_profit_only = False
+    exit_profit_offset = 0.01
+    ignore_roi_if_entry_signal = False
 
     # Optional order time in force.
-    order_time_in_force = {"buy": "gtc", "sell": "ioc"}
+    order_time_in_force = {"entry": "gtc", "exit": "ioc"}
 
     # Optimal timeframe for the strategy
     timeframe = "5m"
@@ -884,7 +884,8 @@ class TrailingBuyStrat(NASOSv5_mod3):
             dataframe["trailing_buy_count"] = dataframe["trailing_buy"].rolling(20).sum()
 
             dataframe.log[
-                (dataframe["trailing_buy"] == 1) & (dataframe["trailing_buy_count"] == 1), "enter_long"
+                (dataframe["trailing_buy"] == 1) & (dataframe["trailing_buy_count"] == 1),
+                "enter_long",
             ] = 1
         else:  # No but trailing
             dataframe.loc[(dataframe["pre_buy"] == 1), "enter_long"] = 1
