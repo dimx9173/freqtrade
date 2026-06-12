@@ -191,10 +191,10 @@ class Hybrid_v3_expBC_combo(IStrategy):
     # GA-optimized trailing (enabled, aggressive)
     # NOTE: GA reported offset=0.001 but freqtrade requires offset > positive.
     # Adjusted to 0.12 (positive 0.107 + 1.3% buffer) for feasibility.
-    trailing_stop: bool = True
-    trailing_stop_positive: float = 0.107  # GA: 10.7% trigger
-    trailing_stop_positive_offset: float = 0.12  # 12% from peak (was GA's infeasible 0.001)
-    trailing_only_offset_is_reached: bool = False  # GA: enable from start (aggressive)
+    trailing_stop: bool = False  # DISABLED: was causing -21.75% drag (253 trades)
+    trailing_stop_positive: float = 0.107  # GA: 10.7% trigger (unused when trailing_stop=False)
+    trailing_stop_positive_offset: float = 0.12  # 12% from peak (unused when trailing_stop=False)
+    trailing_only_offset_is_reached: bool = True  # unused when trailing_stop=False
 
     # P0 FIX: Disable exit_signal — 29/48 trades exit via exit_signal, ALL LOSE
     # avg -0.65%. exit_signal is the primary source of losses. ROI hits 100% win.
@@ -1211,14 +1211,12 @@ class Hybrid_v3_expBC_combo(IStrategy):
             return -0.05  # 5% hard stop (was 3%)
         elif current_profit < 0:
             return -0.99  # let price float, no hard stop in -5%~0% zone
-
-        # Profit-protection tiers
-        if current_profit >= 0.05:
-            return +0.02  # lock 2% profit
-        if current_profit >= 0.03:
-            return +0.01  # lock 1% profit (trailing at 1%)
-        if current_profit >= 0.015:
-            return -0.015  # protect half of 1.5-3% profit
+        elif current_profit < 0.015:
+            return -0.05  # breakeven zone, allow room
+        elif current_profit < 0.03:
+            return -0.015  # protect half profit
+        else:
+            return -0.99  # DISABLED: was +0.01/+0.02 (trailing), now let ROI handle exit
 
         # Default: allow up to -5% below entry for small profits
         return -0.05
