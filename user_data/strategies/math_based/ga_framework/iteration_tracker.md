@@ -1,6 +1,6 @@
 # 數學策略 GA 迭代追蹤
 
-> 最後更新: 2026-06-03（Phase 1 流程改善完成 + 補 2026-06-01 session 4 個 task）
+> 最後更新: 2026-06-12（補 2026-06-05 ~ 2026-06-10 gap：MSI v1 / OOS 4-way / BC_combo 推進 prod / 5 個失敗紀錄）
 
 ## 迭代記錄格式
 
@@ -141,6 +141,155 @@
   - 重新 GA 優化（包含 BB_RPB 參數空間）
 - **狀態**: 🔄 持續迭代中
 
+#### Iteration #4 (OOS 4-way + 二次 OOS 驗證) — 2026-06-05 ~ 2026-06-07 ⭐
+- **日期**: 2026-06-05 (OOS 設計) ~ 2026-06-07 (完成)
+- **Commits**:
+  - `91cec8a69` entry 4-way experiment
+  - `ff69f7c81` entry follow-up
+  - `abc32ae26` BC_sma200 1y peak
+  - `3b5cf8f54` Hybrid_v3 OOS prep + BC_combo promote
+  - `89e104a71` BC_combo dry-run config + OOS 4-way v2 scripts
+  - `1bd592cf1` launch_bccombo_prod_dryrun.sh
+- **目標**: 4 個 Hybrid_v3 變體（A baseline / B C_sma200 / C BC_combo / D BC_sma200）跑雙 OOS 驗證，找出真正可推 prod 的變體
+- **入口** (in-sample 1y, 9 pairs, 20250501-20260524):
+  - 🥇 BC_sma200: -1.80% (#1 in-sample)
+  - 🥈 **BC_combo: -2.49%** (#2)
+  - 🥉 C_sma200: -2.50% (#3)
+  - baseline: -12.54%
+- **1st OOS** (timerange 20251115-20260524, 9 pairs, 幣圈 -34% stress test):
+  - baseline: -9.54% DD 9.54% WR 62.6% 385 trades
+  - C_sma200: -4.58% DD 4.62% WR 62.9% 202 trades (+52.0%)
+  - **BC_combo: -2.49% DD 2.56% WR 58.0% 150 trades (+73.9%)** ⭐
+  - BC_sma200: -3.63% DD 3.63% WR 55.4% 139 trades (+61.9%)
+- **2nd OOS** (timerange 20250504-20251115, 9 pairs, BC_combo 獨立驗證):
+  - **BC_combo: -3.13% DD 6.14% WR 55.0% 160 trades**
+- **關鍵發現 — In-sample ≠ OOS**:
+  - BC_sma200 (in-sample #1) → OOS #3 (-1.80% → -3.63%, 退步 2 名)
+  - **BC_combo (in-sample #2) → OOS #1 (兩個時段都是 -2.49%, 升 1 名)**
+  - OOS 鐵律建立：任何新變體必須跑 2 段 OOS 才推 prod
+- **重大修復**: `Hybrid_v3_baseline.py` 加 alias class `Hybrid_v3`（OOS script 用 `Hybrid_v3` resolve, freqtrade 透過 `inspect.getmembers` 找 `IStrategy` 子類, 變數 alias 會被忽略）
+- **報告**: `user_data/reports/Hybrid_v3_oos_4way_report.md` (5354 bytes)
+- **決策**:
+  - ✅ **BC_combo 推 production dry-run** (vs baseline 改善 +67~74%)
+  - ❌ BC_sma200 不推 prod (in-sample overfit)
+  - ❌ baseline 不推 prod (-9.54% 不及格)
+- **下一步**:
+  - 啟動 `launch_bccombo_prod_dryrun.sh` 觀察 1-2 週
+  - 通過後正式列為 prod strategy
+- **狀態**: ✅ OOS 雙驗證完成, 等 dry-run 啟動
+
+#### Iteration #5 (Hybrid_v3_MSI v1 — cross-asset MSI gate) — 2026-06-05
+- **日期**: 2026-06-05
+- **Commits**: `fd827380b` (策略) + `8cfe0b369` (整合設計) + `aaf6093d5` (Path 2/3 結果)
+- **目標**: 加入 8-asset cross-asset MSI gate (基於 ORCA paper 驗證) 在 Hybrid_v3 主流程上過濾混亂 regime
+- **設計**:
+  - 計算 8 個 cross-asset 1h correlation matrix eigenvalues
+  - MSI = λ_max / mean(λ_i)（市場集中度指標）
+  - MSI > 3.0 → 過濾（市場混亂, 暫停進場）
+- **實作發現**:
+  - Freqtrade `dataframe.index` 不是 `pd.DatetimeIndex`（plain Index）→ 連踩 3 次雷
+  - 用 `isinstance()` 檢查 + 強制 `pd.DatetimeIndex(dataframe.index)`
+  - `merge_asof` 而非 `reindex(method=...)` 避免 dtype 衝突
+  - 用 `.values` 寫回避免 index alignment 問題
+- **Threshold Calibration 教訓**:
+  - 8 資產 PR 範圍 1.07~3.58 (mean 1.56), 跟 3 資產 / 9 資產差 5x
+  - 不能從 paper 抄 threshold, 必須看自己資料的實際範圍
+  - 設 `msi_high_threshold=8` → 永遠不觸發 → 改 `default=3, range=2~4`
+- **Backtest** (2-month, BTC/USDT 15m):
+  - data-limited (8-asset 1h 歷史 < 2 個月)
+  - 即使設對 threshold, 2 月 backtest 樣本太少無法驗證 gate
+  - 結論：需 deploy dry-run 累積 1-3 個月資料
+- **狀態**: ⚠️ 程式碼就緒, 待 dry-run 啟動累積資料
+
+#### Iteration #6 (SL local 9 epochs — regime overfit 確認) — 2026-06-06
+- **日期**: 2026-06-06
+- **Commits**: `2329f3916` + 報告 `hybrid_v3_sl_local_20260606.md`
+- **目標**: 重新 local GA 找 best SL
+- **陷阱發現 — Single Regime Window Hyperopt 不可靠**:
+  | 項目 | 上次 GA (4 月熊市 in) | 本次 SL local (6 月牛市 in) |
+  |---|---|---|
+  | Best SL | -2.6% (緊) ✅ | -28.8% (寬鬆) ❌ |
+  | 4 月熊市表現 | DD 5.75% ✅ | **DD 28%+ 爆倉** ❌ |
+  | 6 月牛市表現 | — | ✅ 16 trades, 62.5% WR |
+  - 6 月 BTC $92k → $108k 純牛市, 16 trades 全部用 ROI 觸發出場
+  - Stoploss 從未被觸發 → ProfitDrawDown loss 對 SL 完全 insensitive
+  - Hyperopt 隨機給 -28.8% loss=3.268 跟 -2.6% 結果完全相同
+- **診斷 4 步法**:
+  1. 開 fthypt (NDJSON) 看 loss 分布
+  2. 看 exit_reason_summary (100% ROI → SL space 不可搜尋)
+  3. 看 trades 數 (< 30 不顯著)
+  4. 看 max consecutive losses
+- **決策**: 保留上次 GA 找的 SL=-2.6%, 不套用本次結果
+- **教訓**:
+  - 任何 hyperopt 結果必須先確認 space 對 loss 有影響
+  - 單 regime 找的參數 = regime overfit
+  - SL/ROI/Trailing 都不是主要 alpha 來源, 重複找 best 是浪費時間
+- **狀態**: ✅ SL=-2.6% 保留, hyperopt 制度修正
+
+#### Iteration #7 (Entry logic 4-way experiment) — 2026-06-06
+- **日期**: 2026-06-06
+- **Commits**: `91cec8a69` (4-way 結果) + `ff69f7c81` (follow-up) + `abc32ae26` (BC_sma200 peak)
+- **目標**: Hybrid_v3 4 種 entry logic 變體 (A voting / B strict_adx / C volatility / D mtf_consensus) 1y in-sample 對比
+- **結果** (1y in-sample, 9 pairs):
+  - **C volatility wins**: -5.33% (vs baseline -12.54%, +57.5%)
+  - BC_sma200 (B+C 組合): -1.80% (#1 in-sample)
+  - BC_combo: -2.49% (#2)
+  - C_sma200: -2.50% (#3)
+- **Entry logic 設計分類**:
+  - A voting: 多重條件多數決
+  - B strict_adx: ADX 嚴格閾值
+  - C volatility: 波動率 + ADX 雙確認
+  - D mtf_consensus: 多時間框架共識
+- **教訓**: volatility-based filter 比 strict threshold 更 robust
+- **狀態**: ✅ in-sample 4-way 完成, 進入 OOS 驗證 (見 Iter #4)
+
+#### Iteration #8 (Entry attempt 1-2: tight trail/custom_sl) — 2026-06-06 ❌ FAILED
+- **日期**: 2026-06-06
+- **Commits**: `8fd38021a`
+- **目標**: 嘗試 tight trailing_stop + tight custom_stoploss 改善 Hybrid_v3 表現
+- **結果** (1y backtest, 9 pairs):
+  - **總利潤 -12.5% → -15.6%** (惡化 25%)
+  - 過緊的 SL/Trailing 過早出場, 錯過 ROI
+- **教訓**:
+  - GA 報告「trailing_stop 拖累 -10.34%」的假設是錯的
+  - 真正虧損源頭是「-3% 停損太寬」, 不是 trailing
+  - **重要確認**: `use_custom_stoploss=True` 完全覆蓋 `trailing_stop` 設定 (A/B 測試結果完全相同)
+- **決策**: 走 C volatility + BC_combo 路線 (放棄 tight trail/custom_sl 路線)
+- **狀態**: ❌ FAILED, 路線封存
+
+#### Iteration #9 (Multi-breakthrough 4-Path POC) — 2026-06-05
+- **日期**: 2026-06-05
+- **Commits**: `0d991590e` (PLAN) + `5024ff378` (POC) + `aaf6093d5` (Path 2/3)
+- **目的**: 探索「多項式方向預測是死路」之外的 4 條突破路徑
+- **Path 1: 跨幣種 Cointegration** (BTC-ETH/BTC-SOL)
+  - Full sample ADF p=0.77/0.27 (p>0.05)
+  - Rolling 30d p<0.05 只有 8-11% (< 60% threshold)
+  - z-score 完全沒觸發, half-life 118 天
+  - **❌ FAILED → DEPRECATED_PATH1.md**
+  - 替代: 跨交易所 funding rate arb (移交 funding-rate-arbitrage)
+- **Path 2: 多資產 Eigenvalue (ORCA)** ✅ VALIDATED
+  - 10 crypto 資產 correlation matrix eigenvalue 在 1h
+  - `MSI = λ_max / mean(λ_i)` 範圍 4.97~9.21
+  - MSI-Vol 相關 **0.689** (vs 3 資產 0.509, +35%)
+  - Crisis 5% windows, 1.49x vol
+  - 預測力 (t→t+4h) = 0.164 ⚠️ 同步指標非領先
+  - 整合方案: MSI > 7.0 作 regime filter / MSI 動態倉位管理
+- **Path 3: XGBoost 進場** (v1/v2/v3 三版)
+  - v1 (1h + TA only): Test AUC = 0.5741, model collapse ❌
+  - v2 (1h + TA + MSI+PR): Test AUC = **0.5797** (+0.19pp), cum ret +60.36% 🟡
+  - v3 (15m + TA + funding rate): Test AUC = **0.5215** (退化), funding 0 importance ❌
+  - **v2 仍是當前最優 XGBoost 配置**
+  - v3 失敗 3 原因: 資料對齊災難, funding 1h FFill 衰減, 15m BTC 噪音 > 結構
+  - 修正: scale_pos_weight=2.1, 加入 MSI 特徵, 15m TF, TimeSeriesSplit
+- **Path 4: RL 強化學習** ⏸️ PHASE 2
+  - 待規劃 (見 Task 3)
+- **POC 紀律**:
+  - 必寫 `user_data/reports/multi_breakthrough_*_results_YYYYMMDD.md`
+  - `git add -f user_data/reports/` (.gitignore 預設排除)
+  - 失敗路徑寫 `DEPRECATED_PATH*.md` 保留教訓
+  - Sub-agent 跑 POCs 易 600s timeout, 改由指揮者寫 .py script + terminal 跑
+- **狀態**: ✅ 4-path 評估完成, 2 條 dead, 1 條 partial, 1 條待辦
+
 ---
 
 ### MultiTF_RegimeDetector_v1 (15m × 10 幣種) — ❌ 失敗教訓
@@ -189,8 +338,16 @@
 ---
 
 ## 待執行迭代
-## 待執行迭代
-- [ ] **Hybrid_v3 套用 GA 參數 + 整合 BB_RPB 進場邏輯**（基線 +6.22% 已驗證）— 🔴 高優先
+- [x] ~~Hybrid_v3 套用 GA 參數 + 整合 BB_RPB 進場邏輯~~ → ✅ Iter #3 完成
+- [x] ~~Hybrid_v3 OOS 4-way + 二次 OOS 驗證~~ → ✅ Iter #4 完成, BC_combo 推 prod
+- [x] ~~Hybrid_v3_MSI v1 (cross-asset gate)~~ → ⚠️ Iter #5 完成, data-limited
+- [x] ~~SL local 9 epochs (regime overfit 確認)~~ → ✅ Iter #6 完成
+- [x] ~~Entry 4-way 實驗~~ → ✅ Iter #7 完成
+- [x] ~~Entry tight trail/custom_sl 嘗試~~ → ❌ Iter #8 FAILED
+- [x] ~~Multi-breakthrough 4-Path POC~~ → ✅ Iter #9 完成 (Path 4 待辦)
+- [ ] **BC_combo dry-run 啟動 + 觀察 1-2 週** (Iter #4 後續)
+- [ ] Hybrid_v3_MSI deploy + 1-3 個月資料累積驗證 (Iter #5 後續)
+- [ ] Path 4 RL 強化學習研究 (Iter #9 後續, 見 PLAN_BREAKTHROUGH_v2.md)
 - [ ] Hybrid_v3 GA 50→500 epochs 進階收斂
 - [ ] Hybrid_v3 buy/sell space 擴展（自定義 IntParameter/DecimalParameter）
 - [ ] PolyReg_Adaptive_v2 — backtest 驗證後進行 GA 優化
