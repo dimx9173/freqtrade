@@ -9,6 +9,9 @@ user_data/*
 !user_data/notebooks
 !user_data/models
 !user_data/freqaimodels
+!user_data/strategies
+!user_data/AGENTS.md
+!user_data/scripts
 user_data/freqaimodels/*
 user_data/models/*
 user_data/notebooks/*
@@ -116,3 +119,8 @@ target/
 !config_examples/config_freqai.example.json
 
 docker-compose-*.yml
+
+# Hyperopt results
+user_data/hyperopt_results/*.fthypt
+user_data/hyperopt_results/summary_results_*.log
+user_data/logs/*.log
