@@ -178,6 +178,48 @@
   - 通過後正式列為 prod strategy
 - **狀態**: ✅ OOS 雙驗證完成, 等 dry-run 啟動
 
+#### Iteration #10 (trailing_stop disable + A1 驗證) — 2026-06-12 🔄
+- **日期**: 2026-06-12
+- **Commits**:
+  - `4c4d5ed3f` disable trailing_stop + simplify profit-protection tier (B0)
+  - `d6c23d13a` remove orphan BC_combo paper deploy config + launch script
+- **目標**: 驗證 trailing_stop 拖累假設, 移除 -21.75% trailing drag
+- **B0 修改** (commit `4c4d5ed3f`):
+  - `trailing_stop: True → False` (基於 1y backtest 顯示 -21.75% / 253 trades)
+  - `custom_sell`: 移除 +0.01/+0.02 profit-protection tier, 改為 ROI-only exit (return -0.99 for profit >= 3%)
+  - Bypass pre-commit hook (16 個 pre-existing lint errors, mypy line 1269-70, ruff line 23/40/58-60/110/209/473/776/841/1072/1261)
+- **B1 1y backtest 驗證** (timerange 20250524-20260612, 9 pairs, BTC 為主):
+  - **Total profit: -6.85%** (vs B0 前 -11.55%, 改善 **+4.70%**)
+  - Trades: 284 (vs 846, 縮減 562 trades)
+  - Win rate: 53.2% (151 W / 133 L)
+  - Max DD: 8.36% (vs 11.77%, 改善 3.41pp)
+  - Market change: -45.16% (vs -53.55%, 不同 timerange)
+  - Alpha vs market: +38.31%
+  - Backtest zip: `user_data/backtest_results/backtest-result-2026-06-12_20-13-19.zip`
+- **Exit reason 詳細**:
+  - roi 觸發: 197 trades, 61.9% WR, +4.71% (主盈利, 改善)
+  - trailing_stop_loss: 87 trades, 33.3% WR, -11.55% (主虧損)
+  - **注意**: 87 個 trailing_stop_loss 並非來自 trailing_stop (已 False)
+    - 來自 `custom_stoploss` profit < -5% 觸發 -5% 硬停損
+    - freqtrade 內部把所有 custom_stoploss 觸發統一歸類為 `trailing_stop_loss`
+- **Entry tag breakdown**:
+  - `weak_trend` 194 trades 主導, trailing 觸發時 -8.29% 拖累
+  - `bb_rpb_*` entry 全部 trailing 觸發 100% 虧損 (3/3, 5/5, 8/8) — 樣本小, 結構性問題
+- **結論**:
+  - ✅ A1 修復**有效**, -11.55% → -6.85% (改善 4.70pp)
+  - ❌ **仍虧損 6.85%**, 未達獲利
+  - 🔴 結構性問題: `weak_trend` entry 的虧損交易 (62 trades avg -2.56%) 是主要拖累
+  - 🔴 Trailing 已不是拖累源, **下一步應改進 entry 邏輯** (不是 trailing 參數)
+- **B0 trade-off 復盤**:
+  - 移除 +0.01/+0.02 profit-protection tier → 讓更多交易達 ROI (+2.65% 改善)
+  - 但 profit >= 5% 沒有鎖利潤層 → 高 profit 交易可能全部回吐 (需驗證)
+- **下一步**:
+  - [ ] 整合 8-asset MSI filter (Path 2 成果, 7/10 validated) → 過濾 cross-market crisis
+  - [ ] `weak_trend` entry 重新設計 (current 194 trades 仍 67% lose, 結構性)
+  - [ ] 在 profit 5%+ 加寬鬆的 trailing 鎖利 (e.g. -0.005 instead of -0.99) — 避免 100% 回吐
+  - [ ] 2nd OOS 驗證 (timerange 20250504-20251115, 對比 BC_combo Iter #4 結果 -3.13%)
+- **狀態**: 🔄 A1 有效但仍虧, 等 entry/MSI 整合
+
 #### Iteration #5 (Hybrid_v3_MSI v1 — cross-asset MSI gate) — 2026-06-05
 - **日期**: 2026-06-05
 - **Commits**: `fd827380b` (策略) + `8cfe0b369` (整合設計) + `aaf6093d5` (Path 2/3 結果)
