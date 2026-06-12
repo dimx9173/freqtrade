@@ -42,10 +42,11 @@ _sklearn_available = False
 _sklearn_error_msg = ""
 
 try:
-    from sklearn.linear_model import Ridge                   # noqa: F811
+    from sklearn.linear_model import Ridge  # noqa: F811
     from sklearn.preprocessing import PolynomialFeatures, StandardScaler  # noqa: F811
-    from sklearn.feature_selection import SelectKBest, f_regression       # noqa: F811
-    from sklearn.pipeline import Pipeline                    # noqa: F811
+    from sklearn.feature_selection import SelectKBest, f_regression  # noqa: F811
+    from sklearn.pipeline import Pipeline  # noqa: F811
+
     _sklearn_available = True
 except ImportError as e:
     _sklearn_error_msg = str(e)
@@ -146,22 +147,14 @@ class MultiTFPolyReg_v1(IStrategy):
         # 價格相對位置（Stochastic-like，20 期）
         low_min = df["low"].rolling(20).min()
         high_max = df["high"].rolling(20).max()
-        f[f"{tf_name}_price_pos"] = (df["close"] - low_min) / (
-            high_max - low_min + 1e-8
-        )
+        f[f"{tf_name}_price_pos"] = (df["close"] - low_min) / (high_max - low_min + 1e-8)
 
         # 均線偏離（20 期 / 50 期）
-        f[f"{tf_name}_ma_dev_20"] = (
-            df["close"] / df["close"].rolling(20).mean() - 1
-        )
-        f[f"{tf_name}_ma_dev_50"] = (
-            df["close"] / df["close"].rolling(50).mean() - 1
-        )
+        f[f"{tf_name}_ma_dev_20"] = df["close"] / df["close"].rolling(20).mean() - 1
+        f[f"{tf_name}_ma_dev_50"] = df["close"] / df["close"].rolling(50).mean() - 1
 
         # 成交量比率（相對於 20 期均值）
-        f[f"{tf_name}_vol_ratio"] = df["volume"] / (
-            df["volume"].rolling(20).mean() + 1e-8
-        )
+        f[f"{tf_name}_vol_ratio"] = df["volume"] / (df["volume"].rolling(20).mean() + 1e-8)
 
         # RSI（14 期）
         f[f"{tf_name}_rsi_14"] = ta.RSI(df, timeperiod=14) / 100.0  # 正規化到 [0,1]
@@ -177,9 +170,7 @@ class MultiTFPolyReg_v1(IStrategy):
 
         return f
 
-    def _merge_informative(
-        self, dataframe: pd.DataFrame, metadata: dict
-    ) -> pd.DataFrame:
+    def _merge_informative(self, dataframe: pd.DataFrame, metadata: dict) -> pd.DataFrame:
         """
         合併多 TF 特徵到主 dataframe（5m）。
         每個 TF 獨立提取特徵後，以 merge_asof 對齊到 5m index。
@@ -309,9 +300,7 @@ class MultiTFPolyReg_v1(IStrategy):
     def populate_indicators(self, dataframe: DataFrame, metadata: dict) -> DataFrame:
         """計算所有指標與模型預測值。"""
         if not _sklearn_available:
-            logger.error(
-                "sklearn not available, cannot train model: %s", _sklearn_error_msg
-            )
+            logger.error("sklearn not available, cannot train model: %s", _sklearn_error_msg)
             dataframe["pred_return"] = 0.0
             return dataframe
 
@@ -332,9 +321,7 @@ class MultiTFPolyReg_v1(IStrategy):
         if self.process_only_new_candles and cached:
             current_model = cached.get("model")
             last_train_idx = cached.get("last_train_idx", -retrain_interval - 1)
-            logger.debug(
-                "Loaded cached model for %s, last_train_idx=%s", pair, last_train_idx
-            )
+            logger.debug("Loaded cached model for %s, last_train_idx=%s", pair, last_train_idx)
         else:
             last_train_idx = -retrain_interval - 1  # 強制首次訓練
 
@@ -396,8 +383,7 @@ class MultiTFPolyReg_v1(IStrategy):
 
         rank_threshold = 0.70  # 前 30% 即進場
         dataframe.loc[
-            (dataframe["pred_rank"] > rank_threshold)
-            & (dataframe["pred_return"] > 0),
+            (dataframe["pred_rank"] > rank_threshold) & (dataframe["pred_return"] > 0),
             "enter_long",
         ] = 1
 
@@ -411,8 +397,7 @@ class MultiTFPolyReg_v1(IStrategy):
         排名信號法出場：預測跌出前 50% 出場。
         """
         dataframe.loc[
-            (dataframe["pred_rank"] < 0.5)
-            & (dataframe["pred_rank"].shift(1) >= 0.5),
+            (dataframe["pred_rank"] < 0.5) & (dataframe["pred_rank"].shift(1) >= 0.5),
             "exit_long",
         ] = 1
 

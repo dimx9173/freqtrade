@@ -32,6 +32,8 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any
 
+import pandas as pd
+
 # ==============================================================================
 # Path Resolution
 # ==============================================================================
@@ -361,6 +363,85 @@ def _find_line_no(source: str, pattern: str) -> int:
     return 0
 
 
+def _auto_detect_datadir(data_root: Path, pair: str, timeframe: str) -> Path:
+    """
+    Auto-detect the right data directory by scanning common freqtrade layouts.
+
+    Searches (in order): binance, bybit, bybit/futures, bybit/spot, okx.
+    Returns the first directory containing a file matching the pair+timeframe.
+
+    freqtrade uses different filename conventions:
+      - binance/okx:     BTC_USDT-5m.feather  (spot)
+      - bybit (legacy):  BTC_USDT-5m-futures.feather  (futures)
+      - bybit/futures:   BTC_USDT_USDT-5m-futures.feather  (futures, futures_mode)
+
+    IMPORTANT: freqtrade's `load_pair_history` with candle_type=FUTURES appends
+    '/futures' to the datadir. So if files live in `bybit/futures/`, the
+    datadir to pass is `bybit/`. If they live in `bybit/`, the datadir is
+    `bybit/..` (one level up). We pick the SHORTEST datadir that has a 'futures'
+    subdir with the matching file.
+
+    Pair 'BTC/USDT:USDT' (futures mode) → look for *_USDT_USDT-{tf}-futures.feather
+    Pair 'BTC/USDT'      (spot mode)    → look for *{tf}.feather
+    """
+    pair_safe = pair.replace("/", "_").replace(":", "_")  # BTC/USDT:USDT → BTC_USDT_USDT
+    pair_safe_short = pair.replace("/", "_")  # BTC/USDT → BTC_USDT
+    is_futures = ":USDT" in pair  # futures mode marker
+
+    if is_futures:
+        patterns = [
+            f"{pair_safe}-{timeframe}-futures.feather",
+            f"{pair_safe_short}-{timeframe}-futures.feather",
+        ]
+    else:
+        patterns = [
+            f"{pair_safe_short}-{timeframe}.feather",
+            f"{pair_safe}-{timeframe}.feather",
+        ]
+
+    if not data_root.exists():
+        return data_root / "binance"
+
+    # Walk all subdirs of data_root, find candidates containing matching files
+    # The candidate datadir is the PARENT of where the file lives, because
+    # freqtrade appends '/futures' for FUTURES candle_type automatically.
+    matches: list[Path] = []  # list of parent datadirs
+    for sub in sorted(data_root.rglob("*")):
+        if not sub.is_dir():
+            continue
+        for pat in patterns:
+            if (sub / pat).exists():
+                # For futures files: datadir should be the parent (so freqtrade
+                # appends /futures/ to land here). For spot: datadir is the dir itself.
+                if is_futures and pat.endswith("-futures.feather"):
+                    matches.append(sub.parent)  # freqtrade will append /futures
+                else:
+                    matches.append(sub)  # spot - no append
+                break
+
+    if not matches:
+        return data_root / "binance"
+
+    # Prefer the SHORTEST path (closer to root = more general setup)
+    # Tiebreak: prefer 'bybit' or 'binance' over less common exchanges
+    def score(p: Path) -> tuple:
+        try:
+            rel = p.relative_to(data_root)
+            depth = len(rel.parts)
+        except ValueError:
+            depth = 99
+        # Prefer specific exchanges
+        pref = 0
+        for keyword in ["bybit", "binance", "okx"]:
+            if keyword in str(p).lower():
+                pref = -1
+                break
+        return (depth, pref)
+
+    matches.sort(key=score)
+    return matches[0]
+
+
 def _get_line(source: str, line_no: int) -> str:
     """Get a specific line from source by 1-based line number."""
     if line_no <= 0:
@@ -438,7 +519,8 @@ def scan_negative_kb(strategy_path: Path, trading_mode: str = "spot") -> list[Ne
 
 
 def count_entry_signals(
-    strategy_name: str, config_path: str, timerange_str: str
+    strategy_name: str, config_path: str, timerange_str: str,
+    datadir_override: str | None = None,
 ) -> tuple[int, str, dict[str, Any]]:
     """
     Load strategy + OHLCV data, compute entry signals, return (signal_count, pair, context).
@@ -463,19 +545,27 @@ def count_entry_signals(
             config = json.load(f)
 
         timeframe = config.get("timeframe", "5m")
-        datadir = Path(config.get("datadir", str(USER_DATA_DIR / "data" / "binance")))
         context["timeframe"] = timeframe
 
         # Determine pairs to check
         exchange_config = config.get("exchange", {})
         pairs: list[str] = []
-        if "pair_whitelist" in exchange_config:
+        if "pair_whitelist" in exchange_config and exchange_config["pair_whitelist"]:
             pairs = exchange_config["pair_whitelist"]
-        elif "pair_blacklist" not in exchange_config:
-            # Default: BTC/USDT — most strategies target BTC
+        elif config.get("pairlists"):
+            # RemotePairList / StaticPairList etc — try to read static list
+            for pl in config["pairlists"]:
+                if pl.get("method") == "StaticPairList" and "pairs" in pl:
+                    pairs = pl["pairs"]
+                    break
+        if not pairs:
+            # Default: BTC/USDT (or futures variant) — most strategies target BTC.
+            # The blacklist presence is irrelevant for smoke testing; we just
+            # need ONE pair to validate signal generation.
             pairs = [
                 "BTC/USDT:USDT" if "futures" in str(config.get("trading_mode", "")) else "BTC/USDT"
             ]
+            context["pair_source"] = "default (BTC/USDT)"
 
         if not pairs:
             context["error"] = "No pairs found in config"
@@ -483,6 +573,15 @@ def count_entry_signals(
 
         pair = pairs[0]
         context["pair"] = pair
+
+        # Resolve datadir AFTER pair resolution (auto-detect needs pair name).
+        # Order: explicit override > config.datadir > auto-detect > binance default
+        if datadir_override:
+            datadir = Path(datadir_override)
+        elif config.get("datadir"):
+            datadir = Path(config["datadir"])
+        else:
+            datadir = _auto_detect_datadir(USER_DATA_DIR / "data", pair, timeframe)
 
         # ---- Parse timerange ----
         # Accept formats: 202501-202503 (YYYYMM-YYYYMM) or 20250101-20250301 (YYYYMMDD-YYYYMMDD)
@@ -599,6 +698,16 @@ def count_entry_signals(
         }
 
         strategy = strategy_cls(strategy_config)
+        # Some strategies (Hybrid_v1, BB_RPB_TSL_BI, etc.) call self.dp in
+        # populate_indicators/populate_entry_trend. freqtrade sets this
+        # externally; in pre-flight we inject a minimal stub.
+        if not hasattr(strategy, "dp") or strategy.dp is None:
+            class _DataProviderStub:
+                def current_whitelist(self):
+                    return [pair]
+                def market(self, p):
+                    return {}
+            strategy.dp = _DataProviderStub()
 
         # ---- Compute entry signals ----
         metadata = {"pair": pair}
@@ -606,8 +715,18 @@ def count_entry_signals(
         df_with_signals = strategy.populate_entry_trend(df_with_indicators, metadata)
 
         # Count signals
-        long_signals = int((df_with_signals.get("enter_long", 0) == 1).sum())
-        short_signals = int((df_with_signals.get("enter_short", 0) == 1).sum())
+        # Use .get() with a default Series of zeros (NOT scalar 0) so that
+        # (col == 1).sum() works whether or not the strategy set the column.
+        # Previous bug: default of 0 (int) caused `0 == 1` → bool → .sum() failed.
+        zero_series = pd.Series(0, index=df_with_signals.index)
+        long_col = df_with_signals.get("enter_long", zero_series)
+        if not hasattr(long_col, "sum"):
+            long_col = zero_series
+        short_col = df_with_signals.get("enter_short", zero_series)
+        if not hasattr(short_col, "sum"):
+            short_col = zero_series
+        long_signals = int((long_col == 1).sum())
+        short_signals = int((short_col == 1).sum())
         total_signals = long_signals + short_signals
 
         context["long_signals"] = long_signals
@@ -682,6 +801,16 @@ Examples:
         type=str,
         required=True,
         help="Time range: YYYYMM-YYYYMM or YYYYMMDD-YYYYMMDD",
+    )
+    parser.add_argument(
+        "--datadir",
+        type=str,
+        default=None,
+        help=(
+            "Override data directory. Default: auto-detect from user_data/data/ "
+            "(checks binance/, bybit/, bybit/futures/, okx/). "
+            "Useful when config doesn't specify datadir."
+        ),
     )
     parser.add_argument(
         "--json",
@@ -773,7 +902,10 @@ Examples:
             print(f"{RED}❌ {msg}{NC}")
         return EXIT_ERROR
 
-    signal_count, pair, ctx = count_entry_signals(args.strategy, args.config, args.timerange)
+    signal_count, pair, ctx = count_entry_signals(
+        args.strategy, args.config, args.timerange,
+        datadir_override=getattr(args, "datadir", None),
+    )
 
     if ctx.get("error"):
         if args.json:
