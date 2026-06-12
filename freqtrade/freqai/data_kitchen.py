@@ -434,8 +434,16 @@ class FreqaiDataKitchen:
         append_dict: dict[str, Any] = {}
 
         for label in predictions.columns:
-            append_dict[label] = predictions[label]
-            if predictions[label].dtype == object:
+            col_data = predictions[label]
+            # Handle duplicate column names (returns DataFrame if duplicates exist)
+            if col_data.ndim > 1:
+                col_data = col_data.iloc[:, 0]  # Keep first occurrence
+            append_dict[label] = col_data
+            if col_data.ndim == 1:
+                is_obj = col_data.dtype == object
+            else:
+                is_obj = col_data.dtypes.iloc[0] == object
+            if is_obj:
                 continue
             if "labels_mean" in self.data and label in self.data["labels_mean"]:
                 append_dict[f"{label}_mean"] = self.data["labels_mean"][label]
@@ -703,6 +711,14 @@ class FreqaiDataKitchen:
         :param suffix: str = suffix to add to the columns of the dataframe to merge
         :return: dataframe = merged dataframe
         """
+        # Deduplicate: drop columns from df_to_merge that already exist in df_main.
+        # This prevents pandas merge from creating _x/_y duplicates when both
+        # dataframes have identically-named columns (e.g. from same-pair merges).
+        # Exclude merge keys (date, date_merge*) from deduplication.
+        date_cols = {c for c in df_main.columns if c == "date" or c.startswith("date_merge")}
+        common = (set(df_main.columns) & set(df_to_merge.columns)) - date_cols
+        if common:
+            df_to_merge = df_to_merge.drop(columns=list(common))
         dataframe = merge_informative_pair(
             df_main,
             df_to_merge,
@@ -745,6 +761,11 @@ class FreqaiDataKitchen:
         tfs: list[str] = self.freqai_config["feature_parameters"].get("include_timeframes")
 
         for tf in tfs:
+            # Skip same-pair + same-timeframe merge — would be identical data causing duplicate columns
+            if not is_corr_pairs and tf == self.config["timeframe"]:
+                logger.debug(f"Skipping {pair} {tf} — same as main timeframe, no self-merge")
+                continue
+
             metadata = {"pair": pair, "tf": tf}
             informative_df = self.get_pair_data_for_features(
                 pair, tf, strategy, corr_dataframes, base_dataframes, is_corr_pairs
@@ -896,7 +917,9 @@ class FreqaiDataKitchen:
         compact for Frequi purposes.
         """
         to_keep = [
-            col for col in dataframe.columns if not col.startswith("%") or col.startswith("%%")
+            col
+            for col in dataframe.columns
+            if isinstance(col, str) and (not col.startswith("%") or col.startswith("%%"))
         ]
         return dataframe[to_keep]
 

@@ -305,10 +305,25 @@ def rolling_max(series, window=14, min_periods=None):
 
 def rolling_weighted_mean(series, window=200, min_periods=None):
     min_periods = window if min_periods is None else min_periods
-    try:
-        return series.ewm(span=window, min_periods=min_periods).mean()
-    except Exception as e:  # noqa: F841
-        return pd.ewma(series, span=window, min_periods=min_periods)
+    # P0-3 FIX (2026-06-10, applied by OpenClaw CTO): pandas 2.0+ dropped pd.ewma
+    # AND series.ewm() raises DataError on non-numeric dtype (e.g. datetime 'date'
+    # column) which makes macd()/bollinger_bands() unusable for ALL strategies
+    # that call qtpylib.macd(dataframe, ...). Coerce to numeric and use the new API.
+    # Also handle DataFrame input (qtpylib.macd passes the full DataFrame, expecting
+    # us to extract 'close' ourselves).
+    if isinstance(series, pd.DataFrame):
+        if 'close' in series.columns:
+            series = series['close']
+        else:
+            # No 'close' column — return zeros of right length
+            return pd.Series(0.0, index=series.index)
+    if not pd.api.types.is_numeric_dtype(series):
+        # Non-numeric (e.g. datetime) — return zeros to let higher-level logic skip
+        try:
+            return pd.Series(0.0, index=series.index)
+        except Exception:
+            return series * 0
+    return series.ewm(span=window, min_periods=min_periods).mean()
 
 
 # ---------------------------------------------
