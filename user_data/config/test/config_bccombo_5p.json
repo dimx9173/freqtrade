@@ -1,0 +1,76 @@
+{
+  "max_open_trades": 5,
+  "stake_currency": "USDT",
+  "stake_amount": "unlimited",
+  "tradable_balance_ratio": 0.99,
+  "dry_run": true,
+  "dry_run_wallet": 1000,
+  "trading_mode": "futures",
+  "margin_mode": "isolated",
+  "strategy": "Hybrid_v3_expBC_combo",
+  "strategy_path": "user_data/strategies/prod",
+  "timeframe": "15m",
+  "process_only_new_candles": true,
+  "use_custom_stoploss": true,
+  "cancel_open_orders_on_exit": false,
+  "position_adjustment_enable": false,
+  "unfilledtimeout": {
+    "entry": 1,
+    "exit": 1,
+    "exit_timeout_count": 0,
+    "unit": "minutes"
+  },
+  "order_types": {
+    "entry": "limit",
+    "exit": "market",
+    "emergency_exit": "market",
+    "force_entry": "market",
+    "force_exit": "market",
+    "stoploss": "market",
+    "stoploss_on_exchange": false,
+    "stoploss_on_exchange_interval": 60
+  },
+  "order_time_in_force": {
+    "entry": "GTC",
+    "exit": "GTC"
+  },
+  "entry_pricing": {
+    "price_side": "other",
+    "use_order_book": true,
+    "order_book_top": 1,
+    "price_last_balance": 0.0,
+    "check_depth_of_market": {
+      "enabled": false,
+      "bids_to_ask_delta": 1.0
+    }
+  },
+  "exit_pricing": {
+    "price_side": "other",
+    "use_order_book": true,
+    "order_book_top": 1
+  },
+  "exchange": {
+    "name": "bybit",
+    "sandbox": false,
+    "ccxt_config": {"enableRateLimit": true, "fee": 0.0004},
+    "ccxt_async_config": {"enableRateLimit": true, "rateLimit": 50},
+    "pair_whitelist": [
+      "BTC/USDT:USDT",
+      "ETH/USDT:USDT",
+      "SOL/USDT:USDT",
+      "XRP/USDT:USDT",
+      "BNB/USDT:USDT"
+    ],
+    "pair_blacklist": [
+      ".*BEAR.*",
+      ".*BULL.*"
+    ]
+  },
+  "pairlists": [
+    {
+      "method": "StaticPairList"
+    }
+  ],
+  "datadir": "user_data/data/bybit/futures",
+  "user_data_dir": "user_data"
+}
