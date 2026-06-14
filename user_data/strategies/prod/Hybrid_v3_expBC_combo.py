@@ -60,9 +60,18 @@ from freqtrade.strategy import (
     stoploss_from_open,
 )
 
-
 logger = logging.getLogger(__name__)
 
+
+# ====================================================================
+#  Cross-Asset MSI Filter (2026-06-12 integration)
+#  - 8 non-BTC symbols → 9-asset (with main pair) correlation matrix
+#  - Participation Ratio (PR) = (Σλ)² / Σ(λ²) → effective rank
+#  - High PR (≥3) = assets uncorrelated = regime chaos (block trending entries)
+#  - Low PR (<1) = assets highly correlated = one-factor market
+#  - Calibrated 2026-06-05: 8-asset PR mean=1.56, range=[1.07, 3.58]
+# ====================================================================
+CROSS_ASSET_SYMBOLS = ["ETH", "SOL", "BNB", "LINK", "DOGE", "ADA", "AVAX", "SUI"]
 
 # ─────────────────────────────────────────────────────────────────────
 # Helper functions imported from BB_RPB_TSL_BI (NFI next gen family)
@@ -290,6 +299,22 @@ class Hybrid_v3_expBC_combo(IStrategy):
     is_optimize_cofi = True
     buy_adx = IntParameter(0, 30, default=13, optimize=is_optimize_cofi)
 
+    # ── Cross-Asset MSI Filter Parameters ──────────────────────────
+    # 8-asset PR range typically 1.0~3.5 (calibrated 2026-06-05)
+    # Hyperopt candidates: 2026-06-12 disabled by default
+    is_optimize_msi = False
+    msi_low_threshold = IntParameter(
+        1, 2, default=1, space="buy", optimize=is_optimize_msi
+    )  # below = low dispersion (one-factor)
+    # msi_high default 2 (8-asset MSI > 2 only 10% of bars; test in Iter #10)
+    msi_high_threshold = IntParameter(
+        1, 4, default=2, space="buy", optimize=is_optimize_msi
+    )  # above = high dispersion (regime chaos, block)
+    # MSI rolling window (1h bars) — 24h lookback
+    MSI_WINDOW: int = 24
+    # Minimum bars required for MSI computation
+    MSI_MIN_BARS: int = 24
+
     # ── Volatility Prediction Parameters ─────────────────────────────
     VOL_FORECAST_HORIZON: int = 12  # predict ATR 12 bars (3h) ahead
     VOL_WINDOW: int = 300  # training window size (bars)
@@ -320,7 +345,64 @@ class Hybrid_v3_expBC_combo(IStrategy):
             informative.append((pair, "30m"))
             informative.append((pair, "1h"))
             informative.append((pair, "4h"))
+        # Add 8 cross-asset 1h pairs for MSI computation
+        # These are loaded even if not in current_whitelist()
+        for sym in CROSS_ASSET_SYMBOLS:
+            cross_pair = f"{sym}/USDT"
+            if cross_pair not in pairs:
+                informative.append((cross_pair, "1h"))
         return informative
+
+    # ==================================================================
+    #  Cross-Asset MSI Computation (2026-06-12)
+    # ==================================================================
+    @staticmethod
+    def _compute_msi(close_df: pd.DataFrame, window: int = 24) -> pd.Series:
+        """
+        Compute Market Structure Index (Participation Ratio) from rolling
+        correlation matrix of multi-asset log returns.
+
+        Parameters
+        ----------
+        close_df : pd.DataFrame
+            Columns = asset symbols, index = datetime, values = close prices
+        window : int
+            Rolling lookback in bars (24 = 24h for 1h TF)
+
+        Returns
+        -------
+        pd.Series
+            MSI (PR) values, indexed by datetime. Bounded [1, N] where N = num assets.
+        """
+        if close_df.empty or len(close_df) < window + 1:
+            return pd.Series(dtype=float, index=close_df.index)
+
+        # Log returns
+        log_ret = np.log(close_df / close_df.shift(1))
+
+        msi_series = pd.Series(np.nan, index=close_df.index)
+        log_ret_arr = log_ret.values
+
+        for i in range(window, len(log_ret)):
+            window_data = log_ret_arr[i - window : i]
+            if np.isnan(window_data).any():
+                continue
+            try:
+                corr = np.corrcoef(window_data.T)
+                corr = np.nan_to_num(corr, nan=0.0)
+                eigvals = np.linalg.eigvalsh(corr)
+                eigvals = np.maximum(eigvals, 0)
+                eig_sum = eigvals.sum()
+                eig_sq_sum = (eigvals ** 2).sum()
+                if eig_sq_sum < 1e-10:
+                    continue
+                # PR = (Σλ)² / Σ(λ²), bounded [1, N]
+                pr = (eig_sum ** 2) / eig_sq_sum
+                msi_series.iloc[i] = pr
+            except Exception:
+                continue
+
+        return msi_series
 
     # ==================================================================
     #  Feature Extraction for Volatility Prediction
@@ -855,6 +937,71 @@ class Hybrid_v3_expBC_combo(IStrategy):
         # Also store current ATR for fallback
         dataframe["atr_pct"] = current_atr_pct
 
+        # ── 5. Cross-Asset MSI Computation ─────────────────────────
+        # Compute Participation Ratio (PR) from 8-asset 1h correlation matrix
+        # Map 1h MSI back to 15m index via forward-fill
+        msi_n_bars = 0
+        msi_mean = float('nan')
+        msi_min = float('nan')
+        msi_max = float('nan')
+        try:
+            all_closes = {}
+            for sym in CROSS_ASSET_SYMBOLS:
+                cross_pair = f"{sym}/USDT"
+                try:
+                    cross_df = self.dp.get_pair_dataframe(pair=cross_pair, timeframe="1h")
+                    if cross_df is not None and not cross_df.empty:
+                        all_closes[sym] = cross_df["close"]
+                except Exception as e:
+                    logger.debug("MSI: failed to load %s: %s", cross_pair, e)
+                    continue
+
+            if len(all_closes) >= 3:
+                close_df = pd.DataFrame(all_closes).dropna(how="any")
+                if len(close_df) >= self.MSI_MIN_BARS:
+                    msi_1h = self._compute_msi(close_df, window=self.MSI_WINDOW)
+
+                    # Force DatetimeIndex (freqtrade may pass plain Index)
+                    if not isinstance(dataframe.index, pd.DatetimeIndex):
+                        df_ts = pd.DatetimeIndex(dataframe.index)
+                    else:
+                        df_ts = dataframe.index
+                    if not isinstance(msi_1h.index, pd.DatetimeIndex):
+                        msi_1h.index = pd.DatetimeIndex(msi_1h.index)
+
+                    # merge_asof to map 1h MSI to 15m bars
+                    msi_temp = pd.DataFrame({"msi": msi_1h.values}, index=msi_1h.index)
+                    df_temp = pd.DataFrame({"_idx": range(len(dataframe))}, index=df_ts)
+                    msi_temp = msi_temp.sort_index()
+                    df_temp = df_temp.sort_index()
+                    merged = pd.merge_asof(
+                        df_temp, msi_temp,
+                        left_index=True, right_index=True,
+                        direction="backward",
+                    )
+                    merged["msi"] = merged["msi"].ffill().bfill()
+                    merged_sorted = merged.sort_values("_idx")
+                    dataframe["msi"] = merged_sorted["msi"].values
+                    msi_n_bars = int(np.isfinite(merged_sorted["msi"].values).sum())
+                    msi_mean = float(np.nanmean(merged_sorted["msi"].values))
+                    msi_min = float(np.nanmin(merged_sorted["msi"].values))
+                    msi_max = float(np.nanmax(merged_sorted["msi"].values))
+                else:
+                    dataframe["msi"] = np.nan
+            else:
+                dataframe["msi"] = np.nan
+        except Exception as e:
+            logger.warning("MSI computation failed: %s", e)
+            dataframe["msi"] = np.nan
+
+        if msi_n_bars > 0:
+            logger.warning(
+                "MSI computed: n=%d mean=%.3f range=[%.3f, %.3f] (threshold=%.1f, %d bars > threshold)",
+                msi_n_bars, msi_mean, msi_min, msi_max,
+                self.msi_high_threshold.value,
+                int((np.array([msi_min, msi_max]) > self.msi_high_threshold.value).sum()),
+            )
+
         return dataframe
 
     # ==================================================================
@@ -1103,6 +1250,27 @@ class Hybrid_v3_expBC_combo(IStrategy):
             mask = (dataframe["regime"] == 2) & is_additional_check & cond
             dataframe.loc[mask, "enter_long"] = 1
             dataframe.loc[mask, "enter_tag"] = tag
+
+        # ── MSI Chaos Gate (regime=2 trending entries only) ─────────
+        # Block BB_RPB trending entries when cross-asset MSI > threshold
+        # (high dispersion = regime chaos, low WR expected)
+        # Only block when MSI is not NaN (have enough data)
+        msi_high = self.msi_high_threshold.value
+        if "msi" in dataframe.columns:
+            msi_chaos = (
+                dataframe["msi"].notna()
+                & (dataframe["msi"] > msi_high)
+                & (dataframe["regime"] == 2)
+            )
+            n_blocked = int((dataframe.loc[msi_chaos, "enter_long"] == 1).sum())
+            dataframe.loc[msi_chaos, "enter_long"] = 0
+            # Keep enter_tag for analysis (don't clear)
+            n_chaos = int(msi_chaos.sum())
+            if n_chaos > 0 or n_blocked > 0:
+                logger.warning(
+                    "MSI chaos gate: %d/%d bars in chaos (msi>%.1f), %d entries blocked",
+                    n_chaos, len(dataframe), msi_high, n_blocked,
+                )
 
         return dataframe
 
