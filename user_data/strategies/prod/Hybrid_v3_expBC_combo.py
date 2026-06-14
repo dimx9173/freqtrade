@@ -73,6 +73,7 @@ logger = logging.getLogger(__name__)
 # ====================================================================
 CROSS_ASSET_SYMBOLS = ["ETH", "SOL", "BNB", "LINK", "DOGE", "ADA", "AVAX", "SUI"]
 
+
 # ─────────────────────────────────────────────────────────────────────
 # Helper functions imported from BB_RPB_TSL_BI (NFI next gen family)
 # ─────────────────────────────────────────────────────────────────────
@@ -393,11 +394,11 @@ class Hybrid_v3_expBC_combo(IStrategy):
                 eigvals = np.linalg.eigvalsh(corr)
                 eigvals = np.maximum(eigvals, 0)
                 eig_sum = eigvals.sum()
-                eig_sq_sum = (eigvals ** 2).sum()
+                eig_sq_sum = (eigvals**2).sum()
                 if eig_sq_sum < 1e-10:
                     continue
                 # PR = (Σλ)² / Σ(λ²), bounded [1, N]
-                pr = (eig_sum ** 2) / eig_sq_sum
+                pr = (eig_sum**2) / eig_sq_sum
                 msi_series.iloc[i] = pr
             except Exception:
                 continue
@@ -941,9 +942,9 @@ class Hybrid_v3_expBC_combo(IStrategy):
         # Compute Participation Ratio (PR) from 8-asset 1h correlation matrix
         # Map 1h MSI back to 15m index via forward-fill
         msi_n_bars = 0
-        msi_mean = float('nan')
-        msi_min = float('nan')
-        msi_max = float('nan')
+        msi_mean = float("nan")
+        msi_min = float("nan")
+        msi_max = float("nan")
         try:
             all_closes = {}
             for sym in CROSS_ASSET_SYMBOLS:
@@ -975,8 +976,10 @@ class Hybrid_v3_expBC_combo(IStrategy):
                     msi_temp = msi_temp.sort_index()
                     df_temp = df_temp.sort_index()
                     merged = pd.merge_asof(
-                        df_temp, msi_temp,
-                        left_index=True, right_index=True,
+                        df_temp,
+                        msi_temp,
+                        left_index=True,
+                        right_index=True,
                         direction="backward",
                     )
                     merged["msi"] = merged["msi"].ffill().bfill()
@@ -997,7 +1000,10 @@ class Hybrid_v3_expBC_combo(IStrategy):
         if msi_n_bars > 0:
             logger.warning(
                 "MSI computed: n=%d mean=%.3f range=[%.3f, %.3f] (threshold=%.1f, %d bars > threshold)",
-                msi_n_bars, msi_mean, msi_min, msi_max,
+                msi_n_bars,
+                msi_mean,
+                msi_min,
+                msi_max,
                 self.msi_high_threshold.value,
                 int((np.array([msi_min, msi_max]) > self.msi_high_threshold.value).sum()),
             )
@@ -1269,7 +1275,10 @@ class Hybrid_v3_expBC_combo(IStrategy):
             if n_chaos > 0 or n_blocked > 0:
                 logger.warning(
                     "MSI chaos gate: %d/%d bars in chaos (msi>%.1f), %d entries blocked",
-                    n_chaos, len(dataframe), msi_high, n_blocked,
+                    n_chaos,
+                    len(dataframe),
+                    msi_high,
+                    n_blocked,
                 )
 
         return dataframe
