@@ -31,8 +31,10 @@ echo "📊 Timeframe: $TIMEFRAMES"
 echo "💱 幣種: $PAIRS"
 echo "=========================================="
 
-# 下載資料（不使用 --prepend，避免合併問題）
-# 改為下載完整資料並覆蓋
+# 下載資料（--prepend 模式：保留歷史，附加新資料）
+# 治本: 2026-06-14 --erase 數據災難（覆蓋 252K → 2076 rows）
+# 改為 --prepend + --append，freqtrade 會自動合併新舊資料
+# ⚠️ 若需要強制重抓（例如換 exchange），刪除 feather 後讓 freqtrade 重建
 $FREQTRADE_BIN download-data \
   --config "$CONFIG" \
   --userdir "$FREQTRADE_DIR/user_data" \
@@ -41,7 +43,7 @@ $FREQTRADE_BIN download-data \
   --pairs $PAIRS \
   --trading-mode futures \
   --datadir "$DATADIR" \
-  --erase
+  --prepend
 
 # 移動可能寫到子目錄的檔案
 if [ -d "$DATADIR/futures" ]; then

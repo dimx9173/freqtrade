@@ -1,0 +1,30 @@
+{
+  "strategy_name": "Hybrid_v3_expBC_combo",
+  "strategy_path": "user_data/strategies/prod",
+  "exchange": {
+    "name": "bybit",
+    "sandbox": false,
+    "ccxt_config": {"enableRateLimit": true},
+    "ccxt_async_config": {"enableRateLimit": true, "rateLimit": 50}
+  },
+  "trading_mode": "futures",
+  "margin_mode": "isolated",
+  "timeframe": "15m",
+  "max_open_trades": 3,
+  "stake_currency": "USDT",
+  "stake_amount": "unlimited",
+  "tradable_balance_ratio": 0.99,
+  "fiat_display_currency": "USD",
+  "dry_run": true,
+  "dry_run_wallet": 1000,
+  "fee": 0.0004,
+  "pair_whitelist": [
+    "BTC/USDT:USDT"
+  ],
+  "pair_blacklist": [
+    ".*BEAR.*",
+    ".*BULL.*"
+  ],
+  "datadir": "user_data/data/bybit/futures",
+  "user_data_dir": "user_data"
+}
