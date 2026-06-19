@@ -101,16 +101,32 @@ def split_params(params_dict: dict) -> dict:
 
     # 策略已知的 buy/sell param (無 prefix 版本)
     KNOWN_BUY_NO_PREFIX = {
-        "base_nb_candles_buy", "lookback_candles", "profit_threshold",
-        "ewo_high", "ewo_high_2", "ewo_low",
-        "low_offset", "low_offset_2", "rsi_buy", "rsi_fast_buy",
-        "buy_adx_min", "buy_adx_trend_min", "buy_atr_threshold_high",
-        "buy_atr_threshold_low", "buy_volume_ratio_min", "buy_rsi_short_min",
-        "buy_rsi_short_max", "buy_rsi_long_max", "buy_ema_proximity_pct",
-        "buy_roc_threshold", "buy_volatility_threshold",
+        "base_nb_candles_buy",
+        "lookback_candles",
+        "profit_threshold",
+        "ewo_high",
+        "ewo_high_2",
+        "ewo_low",
+        "low_offset",
+        "low_offset_2",
+        "rsi_buy",
+        "rsi_fast_buy",
+        "buy_adx_min",
+        "buy_adx_trend_min",
+        "buy_atr_threshold_high",
+        "buy_atr_threshold_low",
+        "buy_volume_ratio_min",
+        "buy_rsi_short_min",
+        "buy_rsi_short_max",
+        "buy_rsi_long_max",
+        "buy_ema_proximity_pct",
+        "buy_roc_threshold",
+        "buy_volatility_threshold",
     }
     KNOWN_SELL_NO_PREFIX = {
-        "base_nb_candles_sell", "high_offset", "high_offset_2",
+        "base_nb_candles_sell",
+        "high_offset",
+        "high_offset_2",
     }
 
     for k, v in params_dict.items():
@@ -133,9 +149,12 @@ def split_params(params_dict: dict) -> dict:
             continue
         elif k == "stoploss":
             stoploss = v
-        elif k.startswith("trailing_") or k in ("trailing_stop", "trailing_stop_positive",
-                                                 "trailing_stop_positive_offset",
-                                                 "trailing_only_offset_is_reached"):
+        elif k.startswith("trailing_") or k in (
+            "trailing_stop",
+            "trailing_stop_positive",
+            "trailing_stop_positive_offset",
+            "trailing_only_offset_is_reached",
+        ):
             trailing[k] = v
         elif k == "max_open_trades":
             max_open_trades = v
@@ -224,7 +243,11 @@ def export_strategy(strategy: str, dry_run: bool = True) -> bool:
         "params": {
             "buy": export["buy"],
             "sell": export["sell"],
-            "max_open_trades": {"max_open_trades": int(export["max_open_trades"]) if export["max_open_trades"] is not None else 5},
+            "max_open_trades": {
+                "max_open_trades": int(export["max_open_trades"])
+                if export["max_open_trades"] is not None
+                else 5
+            },
         },
     }
     # minimal_roi (nested)
@@ -240,8 +263,12 @@ def export_strategy(strategy: str, dry_run: bool = True) -> bool:
         new_json["params"]["trailing"] = {
             "trailing_stop": export["trailing"].get("trailing_stop", True),
             "trailing_stop_positive": export["trailing"].get("trailing_stop_positive", 0.01),
-            "trailing_stop_positive_offset": export["trailing"].get("trailing_stop_positive_offset", 0.03),
-            "trailing_only_offset_is_reached": export["trailing"].get("trailing_only_offset_is_reached", True),
+            "trailing_stop_positive_offset": export["trailing"].get(
+                "trailing_stop_positive_offset", 0.03
+            ),
+            "trailing_only_offset_is_reached": export["trailing"].get(
+                "trailing_only_offset_is_reached", True
+            ),
         }
     # protection (nested)
     if export["protection"]:
@@ -249,7 +276,9 @@ def export_strategy(strategy: str, dry_run: bool = True) -> bool:
 
     # 印出新內容預覽
     print(f"\n   📋 New prod json 預覽 (nested 格式):")
-    print(f"      buy: {len(new_json['params']['buy'])} params (sample: {list(new_json['params']['buy'].items())[:2]})")
+    print(
+        f"      buy: {len(new_json['params']['buy'])} params (sample: {list(new_json['params']['buy'].items())[:2]})"
+    )
     print(f"      sell: {len(new_json['params']['sell'])} params")
     print(f"      roi: {new_json['params'].get('roi', {})}")
     print(f"      stoploss: {new_json['params'].get('stoploss', {})}")
@@ -277,10 +306,8 @@ def export_strategy(strategy: str, dry_run: bool = True) -> bool:
 def main():
     parser = argparse.ArgumentParser(description="hyperopt-to-prod 自動匯出")
     parser.add_argument("--strategy", help="指定單一策略 (預設 5 個全跑)")
-    parser.add_argument("--dry-run", action="store_true", default=True,
-                        help="只預覽不寫入 (預設)")
-    parser.add_argument("--apply", action="store_true",
-                        help="實際寫入 prod json (覆蓋 --dry-run)")
+    parser.add_argument("--dry-run", action="store_true", default=True, help="只預覽不寫入 (預設)")
+    parser.add_argument("--apply", action="store_true", help="實際寫入 prod json (覆蓋 --dry-run)")
     args = parser.parse_args()
 
     dry_run = not args.apply

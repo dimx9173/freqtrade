@@ -1,39 +1,31 @@
 #!/usr/bin/env python3
+"""
+check_bots.py v2
+健康檢查 + 狀態漂移偵測
+讀取 registry.json 作為 single source of truth
+"""
 import subprocess
 import requests
 import sqlite3
 import os
-import time
+import json
 import sys
+from datetime import datetime
 
-BOTS = [
-    {"name": "NASOSv4", "port": 13991, "config": "config_1.json", "strategy": "NASOSv4"},
-    {"name": "PSV5_Hybrid", "port": 13992, "config": "config_2.json", "strategy": "PSV5_Hybrid"},
-    {
-        "name": "BB_RPB_TSL_BI",
-        "port": 13993,
-        "config": "config_3.json",
-        "strategy": "BB_RPB_TSL_BI",
-    },
-    {"name": "NASOSv5_mod3", "port": 13994, "config": "config_4.json", "strategy": "NASOSv5_mod3"},
-    {
-        "name": "SMAOffsetProtectOptV1",
-        "port": 13995,
-        "config": "config_5.json",
-        "strategy": "SMAOffsetProtectOptV1",
-    },
-    {
-        "name": "ElliotV5_SMA_ninja",
-        "port": 13996,
-        "config": "config_6.json",
-        "strategy": "ElliotV5_SMA_ninja",
-    },
-]
+REGISTRY_PATH = "/home/brian/freqtrade/user_data/config/prod/registry.json"
+BASE_DIR = "/home/brian/freqtrade"
 
 
-def check_bot(bot):
+def load_registry():
+    """載入 registry.json"""
+    with open(REGISTRY_PATH, "r") as f:
+        return json.load(f)
+
+
+def check_bot_health(port, timeout=5):
+    """檢查 bot 健康狀態"""
     try:
-        resp = requests.get(f"http://127.0.0.1:{bot['port']}/api/v1/ping", timeout=5)
+        resp = requests.get(f"http://127.0.0.1:{port}/api/v1/ping", timeout=timeout)
         if resp.status_code == 200:
             return True, "Running"
         else:
@@ -42,18 +34,91 @@ def check_bot(bot):
         return False, str(e)
 
 
-def get_profit_from_db(bot):
-    sqlite_dir = "/home/brian/freqtrade/user_data/sqlite"
-    db_map = {
-        13991: "tradesv3_1.sqlite",
-        13992: "tradesv3_uat.sqlite",
-        13993: "tradesv3_93.sqlite",
-        13994: "tradesv3_4.sqlite",
-        13995: "tradesv3_5.sqlite",
-        13996: "tradesv3_6.sqlite",
-    }
-    db_file = db_map.get(bot["port"], f"tradesv3_{str(bot['port'])[-2:]}.sqlite")
-    db_path = os.path.join(sqlite_dir, db_file)
+def find_freqtrade_process(port):
+    """尋找指定 port 的 freqtrade process"""
+    try:
+        result = subprocess.run(
+            ["pgrep", "-f", f"freqtrade.*--config.*slot_"],
+            capture_output=True,
+            text=True
+        )
+        for pid in result.stdout.strip().split("\n"):
+            if not pid:
+                continue
+            # 檢查 cmdline 是否包含該 port
+            try:
+                with open(f"/proc/{pid}/cmdline", "r") as f:
+                    cmdline = f.read()
+                    if f"slot_" in cmdline:
+                        # 簡化：回傳 pid 和 cmdline
+                        return {"pid": pid, "cmdline": cmdline}
+            except:
+                continue
+        return None
+    except:
+        return None
+
+
+def extract_strategy_from_cmdline(cmdline):
+    """從 cmdline 提取策略名稱"""
+    # 尋找 --strategy 後的值
+    parts = cmdline.split("\x00")  # /proc/pid/cmdline 用 null 分隔
+    for i, part in enumerate(parts):
+        if part == "--strategy" and i + 1 < len(parts):
+            return parts[i + 1]
+    return None
+
+
+def detect_drift(registry):
+    """偵測 registry 與實際狀態的漂移"""
+    drifts = []
+    slots = registry.get("slots", {})
+
+    for slot_id, slot in slots.items():
+        port = slot.get("port")
+        expected_strategy = slot.get("strategy")
+        expected_status = slot.get("status", "unknown")
+
+        # 檢查 process 是否存在
+        proc = find_freqtrade_process(port)
+        actual_running = proc is not None
+
+        # 狀態漂移檢查
+        if expected_status == "running" and not actual_running:
+            drifts.append({
+                "slot": slot_id,
+                "type": "status_mismatch",
+                "expected": "running",
+                "actual": "stopped",
+                "message": f"Slot {slot_id}: registry=running, actual=stopped"
+            })
+        elif expected_status == "stopped" and actual_running:
+            drifts.append({
+                "slot": slot_id,
+                "type": "status_mismatch",
+                "expected": "stopped",
+                "actual": "running",
+                "message": f"Slot {slot_id}: registry=stopped, actual=running"
+            })
+
+        # 策略漂移檢查
+        if proc and proc.get("cmdline"):
+            actual_strategy = extract_strategy_from_cmdline(proc["cmdline"])
+            if actual_strategy and actual_strategy != expected_strategy:
+                drifts.append({
+                    "slot": slot_id,
+                    "type": "strategy_mismatch",
+                    "expected": expected_strategy,
+                    "actual": actual_strategy,
+                    "message": f"Slot {slot_id}: registry={expected_strategy}, actual={actual_strategy}"
+                })
+
+    return drifts
+
+
+def get_profit_from_db(db_name):
+    """從 SQLite 獲取 P&L 數據"""
+    db_path = os.path.join(BASE_DIR, "user_data/sqlite", db_name)
     if not os.path.exists(db_path):
         return None
     try:
@@ -83,31 +148,73 @@ def get_profit_from_db(bot):
         return None
 
 
-def restart_bot(bot):
-    port_suffix = str(bot["port"])[-2:]
-    cmd = f"cd /home/brian/freqtrade && zsh user_data/scripts/utilities/monitor_run.sh 'freqtrade trade --config user_data/config/{bot['config']} --db-url sqlite:///user_data/sqlite/tradesv3_{port_suffix}.sqlite --logfile user_data/logs/freqtrade_{bot['name']}.log --strategy-path user_data/strategies/prod --strategy {bot['strategy']}'"
-    subprocess.Popen(cmd, shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+def restart_bot(slot_id, slot):
+    """重啟 bot"""
+    config = f"slot_{slot_id}.json"
+    db = slot.get("db")
+    log = slot.get("log")
+    strategy = slot.get("strategy")
+
+    cmd = (
+        f"cd {BASE_DIR} && "
+        f"source .venv/bin/activate && "
+        f"freqtrade trade "
+        f"--config user_data/config/prod/{config} "
+        f"--db-url sqlite:///user_data/sqlite/{db} "
+        f"--logfile user_data/logs/{log} "
+        f"--strategy-path user_data/strategies/prod "
+        f"--strategy {strategy}"
+    )
+    subprocess.Popen(
+        cmd,
+        shell=True,
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+        start_new_session=True
+    )
     return True
 
 
 def main():
+    registry = load_registry()
+    slots = registry.get("slots", {})
+
     results = []
     profit_lines = []
-    for bot in BOTS:
-        running, status = check_bot(bot)
-        if not running:
-            restart_bot(bot)
-            results.append(f"🔄 {bot['name']}: 未運行 ({status})，已重啟")
-        else:
-            results.append(f"✅ {bot['name']}: 正常運行")
-            profit = get_profit_from_db(bot)
+    drifts = detect_drift(registry)
+
+    # 健康檢查
+    for slot_id, slot in sorted(slots.items(), key=lambda x: int(x[0])):
+        name = slot.get("name")
+        port = slot.get("port")
+        db = slot.get("db")
+
+        running, status = check_bot_health(port)
+
+        # 如果 bot 停止且不在 swapping 狀態，嘗試重啟
+        if not running and slot.get("status") != "swapping":
+            restart_bot(slot_id, slot)
+            results.append(f"🔄 Slot {slot_id} ({name}): 未運行 ({status})，已重啟")
+        elif running:
+            results.append(f"✅ Slot {slot_id} ({name}): 正常運行")
+            profit = get_profit_from_db(db)
             if profit:
                 profit_lines.append(
-                    f"  📊 {bot['name']}: 總交易={profit['trade_count']}, 已平倉={profit['closed_trades']}, 持倉中={profit['open_trades']}, "
+                    f"  📊 {name}: 總交易={profit['trade_count']}, "
+                    f"已平倉={profit['closed_trades']}, 持倉中={profit['open_trades']}, "
                     f"已平倉損益={profit['profit_abs']:.4f} USDT (avg {profit['profit_pct']:.2f}%)"
                 )
             else:
-                profit_lines.append(f"  ⚠️ {bot['name']}: 無法獲取 P&L 數據")
+                profit_lines.append(f"  ⚠️ {name}: 無法獲取 P&L 數據")
+        else:
+            results.append(f"⏸️ Slot {slot_id} ({name}): swapping 狀態，跳過重啟")
+
+    # 漂移報告
+    if drifts:
+        print("\n⚠️  狀態漂移偵測:")
+        for drift in drifts:
+            print(f"  - {drift['message']}")
+        print("  執行 `bash scripts/prod/reconcile.sh --apply` 同步狀態\n")
 
     output = "\n".join(results)
     if profit_lines:
