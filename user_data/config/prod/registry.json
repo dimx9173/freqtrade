@@ -2,7 +2,7 @@
   "schema_version": "2.0",
   "exchange": "bybit",
   "trading_mode": "futures",
-  "last_reconciled": "2026-06-19T00:00:00Z",
+  "last_reconciled": "2026-06-19T08:32:16.347174Z",
   "slots": {
     "1": {
       "name": "NASOSv4",
@@ -13,7 +13,7 @@
       "strategy_version": "",
       "config": "slot_1.json",
       "params": "NASOSv4.json",
-      "status": "stopped",
+      "status": "running",
       "last_deployed": "2026-06-16T20:00:39Z",
       "pairs": [
         "BTC/USDT:USDT",
@@ -37,7 +37,7 @@
       "strategy_version": "",
       "config": "slot_2.json",
       "params": "PSV5_Hybrid.json",
-      "status": "stopped",
+      "status": "running",
       "last_deployed": "2026-06-16T20:00:39Z",
       "pairs": [
         "BTC/USDT:USDT",
@@ -61,7 +61,7 @@
       "strategy_version": "",
       "config": "slot_3.json",
       "params": "BB_RPB_TSL_BI.json",
-      "status": "stopped",
+      "status": "running",
       "last_deployed": "2026-06-16T20:00:39Z",
       "pairs": [
         "BTC/USDT:USDT",
@@ -85,7 +85,7 @@
       "strategy_version": "",
       "config": "slot_4.json",
       "params": "NASOSv5_mod3.json",
-      "status": "stopped",
+      "status": "running",
       "last_deployed": "2026-06-16T20:00:39Z",
       "pairs": [
         "BTC/USDT:USDT",
@@ -109,7 +109,7 @@
       "strategy_version": "",
       "config": "slot_5.json",
       "params": "SMAOffsetProtectOptV1.json",
-      "status": "stopped",
+      "status": "running",
       "last_deployed": "2026-06-16T20:00:39Z",
       "pairs": [
         "BTC/USDT:USDT",
@@ -133,7 +133,7 @@
       "strategy_version": "",
       "config": "slot_6.json",
       "params": "ElliotV5_SMA_ninja.json",
-      "status": "stopped",
+      "status": "running",
       "last_deployed": "2026-06-16T20:00:39Z",
       "pairs": [
         "BTC/USDT:USDT",
