@@ -7,8 +7,8 @@
     "timeframe": "15m",
     "cancel_open_orders_on_exit": false,
     "ignore_buying_expired_candle_after": 30,
-    "trading_mode": "spot",
-    "margin_mode": "",
+    "trading_mode": "futures",
+    "margin_mode": "isolated",
     "trailing_stop": true,
     "unfilledtimeout": {
         "entry": 10,
@@ -54,7 +54,7 @@
                 "adjustForTimeDifference": true,
                 "recvWindow": 60000
             },
-            "fee": 0.0011
+            "fee": 0.00061
         },
         "ccxt_async_config": {
             "enableRateLimit": true,
