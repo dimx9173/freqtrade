@@ -13,10 +13,18 @@
       "strategy_version": "",
       "config": "slot_1.json",
       "params": "NASOSv4.json",
-      "status": "unknown",
+      "status": "stopped",
       "last_deployed": "2026-06-16T20:00:39Z",
-      "pairs": [],
-      "timeframes": [],
+      "pairs": [
+        "BTC/USDT:USDT",
+        "ETH/USDT:USDT",
+        "SOL/USDT:USDT",
+        "XRP/USDT:USDT",
+        "BNB/USDT:USDT"
+      ],
+      "timeframes": [
+        "5m"
+      ],
       "health_check_url": "http://127.0.0.1:13991/api/v1/ping",
       "backup_path": "user_data/backups/prod/slot_1/"
     },
@@ -29,10 +37,18 @@
       "strategy_version": "",
       "config": "slot_2.json",
       "params": "PSV5_Hybrid.json",
-      "status": "unknown",
+      "status": "stopped",
       "last_deployed": "2026-06-16T20:00:39Z",
-      "pairs": [],
-      "timeframes": [],
+      "pairs": [
+        "BTC/USDT:USDT",
+        "ETH/USDT:USDT",
+        "SOL/USDT:USDT",
+        "XRP/USDT:USDT",
+        "BNB/USDT:USDT"
+      ],
+      "timeframes": [
+        "15m"
+      ],
       "health_check_url": "http://127.0.0.1:13992/api/v1/ping",
       "backup_path": "user_data/backups/prod/slot_2/"
     },
@@ -45,10 +61,18 @@
       "strategy_version": "",
       "config": "slot_3.json",
       "params": "BB_RPB_TSL_BI.json",
-      "status": "unknown",
+      "status": "stopped",
       "last_deployed": "2026-06-16T20:00:39Z",
-      "pairs": [],
-      "timeframes": [],
+      "pairs": [
+        "BTC/USDT:USDT",
+        "ETH/USDT:USDT",
+        "SOL/USDT:USDT",
+        "XRP/USDT:USDT",
+        "BNB/USDT:USDT"
+      ],
+      "timeframes": [
+        "5m"
+      ],
       "health_check_url": "http://127.0.0.1:13993/api/v1/ping",
       "backup_path": "user_data/backups/prod/slot_3/"
     },
@@ -61,10 +85,18 @@
       "strategy_version": "",
       "config": "slot_4.json",
       "params": "NASOSv5_mod3.json",
-      "status": "unknown",
+      "status": "stopped",
       "last_deployed": "2026-06-16T20:00:39Z",
-      "pairs": [],
-      "timeframes": [],
+      "pairs": [
+        "BTC/USDT:USDT",
+        "ETH/USDT:USDT",
+        "SOL/USDT:USDT",
+        "XRP/USDT:USDT",
+        "BNB/USDT:USDT"
+      ],
+      "timeframes": [
+        "5m"
+      ],
       "health_check_url": "http://127.0.0.1:13994/api/v1/ping",
       "backup_path": "user_data/backups/prod/slot_4/"
     },
@@ -77,10 +109,18 @@
       "strategy_version": "",
       "config": "slot_5.json",
       "params": "SMAOffsetProtectOptV1.json",
-      "status": "unknown",
+      "status": "stopped",
       "last_deployed": "2026-06-16T20:00:39Z",
-      "pairs": [],
-      "timeframes": [],
+      "pairs": [
+        "BTC/USDT:USDT",
+        "ETH/USDT:USDT",
+        "SOL/USDT:USDT",
+        "XRP/USDT:USDT",
+        "BNB/USDT:USDT"
+      ],
+      "timeframes": [
+        "5m"
+      ],
       "health_check_url": "http://127.0.0.1:13995/api/v1/ping",
       "backup_path": "user_data/backups/prod/slot_5/"
     },
@@ -93,10 +133,18 @@
       "strategy_version": "",
       "config": "slot_6.json",
       "params": "ElliotV5_SMA_ninja.json",
-      "status": "unknown",
+      "status": "stopped",
       "last_deployed": "2026-06-16T20:00:39Z",
-      "pairs": [],
-      "timeframes": [],
+      "pairs": [
+        "BTC/USDT:USDT",
+        "ETH/USDT:USDT",
+        "SOL/USDT:USDT",
+        "XRP/USDT:USDT",
+        "BNB/USDT:USDT"
+      ],
+      "timeframes": [
+        "5m"
+      ],
       "health_check_url": "http://127.0.0.1:13996/api/v1/ping",
       "backup_path": "user_data/backups/prod/slot_6/"
     }
