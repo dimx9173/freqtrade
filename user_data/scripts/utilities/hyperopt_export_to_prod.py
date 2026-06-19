@@ -179,9 +179,18 @@ def split_params(params_dict: dict) -> dict:
     }
 
 
-def validate_export(export: dict, strategy: str) -> list[str]:
-    """驗證匯出結構, 回傳錯誤清單"""
+def validate_export(export: dict, strategy: str, metrics: dict = None) -> list[str]:
+    """驗證匯出結構, 回傳錯誤清單
+
+    包含 Swarm 審閱 v2 建議的績效門檻:
+    - sharpe_ratio > 1.5
+    - profit_factor > 1.3
+    - max_drawdown < 25%
+    """
     errors = []
+    warnings = []
+
+    # 基本結構驗證
     if not export["buy"]:
         errors.append(f"{strategy}: buy params 為空 (hyperopt 沒找到 buy 維度?)")
     if export["max_open_trades"] is not None and export["max_open_trades"] == 0:
@@ -190,7 +199,22 @@ def validate_export(export: dict, strategy: str) -> list[str]:
         errors.append(f"{strategy}: 缺 stoploss")
     if export["stoploss"] is not None and export["stoploss"] > -0.02:
         errors.append(f"{strategy}: stoploss {export['stoploss']} 過寬 (> -2%)")
-    return errors
+
+    # 績效門檻驗證 (Swarm 審閱 v2)
+    if metrics:
+        sharpe = metrics.get("sharpe")
+        if sharpe is not None and sharpe < 1.5:
+            warnings.append(f"{strategy}: sharpe_ratio {sharpe:.2f} < 1.5 (建議門檻)")
+
+        profit_factor = metrics.get("profit_factor")
+        if profit_factor is not None and profit_factor < 1.3:
+            warnings.append(f"{strategy}: profit_factor {profit_factor:.2f} < 1.3 (建議門檻)")
+
+        max_drawdown = metrics.get("max_drawdown")
+        if max_drawdown is not None and max_drawdown > 0.25:
+            warnings.append(f"{strategy}: max_drawdown {max_drawdown:.1%} > 25% (建議門檻)")
+
+    return errors + warnings
 
 
 def export_strategy(strategy: str, dry_run: bool = True) -> bool:
