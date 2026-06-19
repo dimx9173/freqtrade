@@ -28,30 +28,6 @@
       "health_check_url": "http://127.0.0.1:13991/api/v1/ping",
       "backup_path": "user_data/backups/prod/slot_1/"
     },
-    "2": {
-      "name": "PSV5_Hybrid",
-      "port": 13992,
-      "db": "tradesv3_uat.sqlite",
-      "log": "freqtrade_uat_PSV5_Hybrid.log",
-      "strategy": "PSV5_Hybrid",
-      "strategy_version": "",
-      "config": "slot_2.json",
-      "params": "PSV5_Hybrid.json",
-      "status": "running",
-      "last_deployed": "2026-06-16T20:00:39Z",
-      "pairs": [
-        "BTC/USDT:USDT",
-        "ETH/USDT:USDT",
-        "SOL/USDT:USDT",
-        "XRP/USDT:USDT",
-        "BNB/USDT:USDT"
-      ],
-      "timeframes": [
-        "15m"
-      ],
-      "health_check_url": "http://127.0.0.1:13992/api/v1/ping",
-      "backup_path": "user_data/backups/prod/slot_2/"
-    },
     "3": {
       "name": "BB_RPB_TSL_BI",
       "port": 13993,
