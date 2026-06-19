@@ -17,22 +17,22 @@
       "max_open_trades": 3
     },
     "buy": {
-      "base_nb_candles_buy": 57,
-      "ewo_high": 5.469,
-      "ewo_low": -17.608,
-      "low_offset": 0.936,
-      "rsi_buy": 44
+      "base_nb_candles_buy": 20,
+      "ewo_high": 2.694,
+      "ewo_low": -16.073,
+      "low_offset": 0.934,
+      "rsi_buy": 37
     },
     "sell": {
-      "base_nb_candles_sell": 32,
-      "high_offset": 1.05,
-      "pHSL": -0.087,
-      "pPF_1": 0.018,
-      "pPF_2": 0.047,
-      "pSL_1": 0.013,
-      "pSL_2": 0.04
+      "base_nb_candles_sell": 51,
+      "high_offset": 1.055,
+      "pHSL": -0.086,
+      "pPF_1": 0.02,
+      "pPF_2": 0.057,
+      "pSL_1": 0.009,
+      "pSL_2": 0.05
     }
   },
   "ft_stratparam_v": 1,
-  "export_time": "2026-06-07 02:23:12.081712+00:00"
+  "export_time": "2026-06-17 02:47:49.415378+00:00"
 }

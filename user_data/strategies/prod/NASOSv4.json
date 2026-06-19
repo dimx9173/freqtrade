@@ -1,40 +1,43 @@
 {
   "strategy_name": "NASOSv4",
   "params": {
+    "roi": {
+      "0": 10
+    },
+    "stoploss": {
+      "stoploss": -0.15
+    },
+    "trailing": {
+      "trailing_stop": true,
+      "trailing_stop_positive": 0.001,
+      "trailing_stop_positive_offset": 0.016,
+      "trailing_only_offset_is_reached": true
+    },
+    "max_open_trades": {
+      "max_open_trades": 3
+    },
     "buy": {
-      "base_nb_candles_buy": 4,
-      "lookback_candles": 10,
-      "profit_threshold": 1.009,
       "ewo_high": 2.403,
       "ewo_high_2": -5.585,
       "ewo_low": -14.378,
       "low_offset": 0.984,
       "low_offset_2": 0.942,
-      "rsi_buy": 72
+      "rsi_buy": 72,
+      "base_nb_candles_buy": 10,
+      "lookback_candles": 22,
+      "profit_threshold": 1.012
     },
     "sell": {
-      "base_nb_candles_sell": 18,
-      "high_offset": 1.076,
-      "high_offset_2": 1.193
-    },
-    "protection": {
       "pHSL": -0.15,
       "pPF_1": 0.016,
       "pPF_2": 0.024,
       "pSL_1": 0.014,
-      "pSL_2": 0.022
-    },
-    "max_open_trades": {
-      "max_open_trades": 3
+      "pSL_2": 0.022,
+      "base_nb_candles_sell": 21,
+      "high_offset": 1.075,
+      "high_offset_2": 1.431
     }
   },
-  "minimal_roi": {
-    "0": 10
-  },
-  "stoploss": -0.15,
-  "trailing_stop": true,
-  "trailing_stop_positive": 0.001,
-  "trailing_stop_positive_offset": 0.016,
-  "trailing_only_offset_is_reached": true,
-  "max_open_trades": 3
+  "ft_stratparam_v": 1,
+  "export_time": "2026-06-17 00:45:07.343530+00:00"
 }

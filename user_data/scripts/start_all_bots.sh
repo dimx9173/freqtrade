@@ -58,7 +58,16 @@ for task in "${TASKS[@]}"; do
         echo "[Bot $ID] $NAME — 已在運行中，跳過。"
     else
         echo "[Bot $ID] $NAME — 未運行，正在啟動..."
-        ARGS="--config user_data/config/$CONFIG --db-url sqlite:///user_data/sqlite/$DB --logfile user_data/logs/$LOG --strategy-path $STRATEGY_BASE --strategy $STRAT"
+        # 載入 prod/{strategy}.json (hyperopt 產出) 作為第二個 -c config 覆蓋 .py defaults
+        PARAMS_FILE="user_data/strategies/prod/${STRAT}.json"
+        PARAMS_CONFIG=""
+        if [[ -f "$PARAMS_FILE" ]]; then
+            PARAMS_CONFIG="-c $PARAMS_FILE"
+            echo "[Bot $ID] $NAME — 載入 hyperopt params: $PARAMS_FILE"
+        else
+            echo "[Bot $ID] $NAME — WARN: 無 $PARAMS_FILE, 將使用 .py defaults"
+        fi
+        ARGS="--config user_data/config/$CONFIG $PARAMS_CONFIG --db-url sqlite:///user_data/sqlite/$DB --logfile user_data/logs/$LOG --strategy-path $STRATEGY_BASE --strategy $STRAT"
         CMD="cd $BASE_DIR && source .venv/bin/activate && freqtrade --version && zsh user_data/scripts/utilities/monitor_run.sh \"freqtrade trade $ARGS\""
         tmux send-keys -t "$SESSION:$ID" C-c C-u "$CMD" C-m
     fi

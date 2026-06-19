@@ -2,20 +2,20 @@
   "strategy_name": "NASOSv5_mod3",
   "params": {
     "buy": {
-      "base_nb_candles_buy": 13,
-      "lookback_candles": 88,
-      "profit_threshold": 1.032,
-      "ewo_high": 4.116,
-      "ewo_high_2": 0.266,
-      "ewo_low": -9.931,
-      "low_offset": 0.979,
+      "base_nb_candles_buy": 21,
+      "lookback_candles": 77,
+      "profit_threshold": 1.046,
+      "ewo_high": 11.277,
+      "ewo_high_2": 2.844,
+      "ewo_low": -19.987,
+      "low_offset": 0.972,
       "low_offset_2": 0.96,
-      "rsi_buy": 48
+      "rsi_buy": 62
     },
     "sell": {
-      "base_nb_candles_sell": 20,
+      "base_nb_candles_sell": 13,
       "high_offset": 1.01,
-      "high_offset_2": 1.351
+      "high_offset_2": 1.321
     },
     "max_open_trades": {
       "max_open_trades": 10
@@ -24,7 +24,13 @@
   "minimal_roi": {
     "0": 0.06,
     "30": 0.03,
-    "60": 0.015
+    "60": 0.015,
+    "roi_p0": 0.06,
+    "roi_p1": 0.03,
+    "roi_p2": 0.015,
+    "roi_t0": 30,
+    "roi_t1": 30,
+    "roi_t2": 30
   },
   "stoploss": -0.3,
   "trailing_stop": true,

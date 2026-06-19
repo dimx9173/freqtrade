@@ -26,22 +26,22 @@
     },
     "sell": {
       "high_offset": 1.01,
-      "base_nb_candles_sell": 20,
-      "high_offset_2": 1.351
+      "base_nb_candles_sell": 13,
+      "high_offset_2": 1.321
     },
     "buy": {
-      "base_nb_candles_buy": 13,
-      "ewo_high": 4.116,
-      "ewo_high_2": 0.266,
-      "ewo_low": -9.931,
-      "lookback_candles": 88,
-      "low_offset": 0.979,
+      "base_nb_candles_buy": 21,
+      "ewo_high": 11.277,
+      "ewo_high_2": 2.844,
+      "ewo_low": -19.987,
+      "lookback_candles": 77,
+      "low_offset": 0.972,
       "low_offset_2": 0.96,
-      "profit_threshold": 1.032,
-      "rsi_buy": 48,
-      "rsi_fast_buy": 39
+      "profit_threshold": 1.046,
+      "rsi_buy": 62,
+      "rsi_fast_buy": 15
     }
   },
   "ft_stratparam_v": 1,
-  "export_time": "2026-06-07 02:15:03.132615+00:00"
+  "export_time": "2026-06-17 02:39:28.672437+00:00"
 }
