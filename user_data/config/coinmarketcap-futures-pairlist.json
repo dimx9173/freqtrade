@@ -1,4 +1,5 @@
-[
+{
+  "pairs": [
     "BTC/USDT:USDT",
     "ETH/USDT:USDT",
     "BNB/USDT:USDT",
@@ -10,18 +11,20 @@
     "LEO/USDT:USDT",
     "ZEC/USDT:USDT",
     "XLM/USDT:USDT",
-    "XMR/USDT:USDT",
     "CC/USDT:USDT",
+    "XMR/USDT:USDT",
     "ADA/USDT:USDT",
     "LINK/USDT:USDT",
     "USD1/USDT:USDT",
     "GRAM/USDT:USDT",
     "BCH/USDT:USDT",
     "M/USDT:USDT",
-    "LTC/USDT:USDT",
     "HBAR/USDT:USDT",
-    "USDG/USDT:USDT",
+    "LTC/USDT:USDT",
     "SUI/USDT:USDT",
-    "PYUSD/USDT:USDT",
+    "NEAR/USDT:USDT",
+    "USDG/USDT:USDT",
     "SHIB/USDT:USDT"
-]
+  ],
+  "refresh_period": 1800
+}

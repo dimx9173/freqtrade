@@ -142,13 +142,52 @@ echo "Created: TestTV_${HASH}.py"
 cd /home/brian/freqtrade
 source .venv/bin/activate
 
-backtest_result=$(freqtrade backtesting \
-    --config user_data/config.json \
-    --strategy TestTV_${HASH} \
-    --timerange 20260401-20260419 \
-    --timeframe 1h \
-    --export trades \
-    2>&1)
+BT_CONFIG="/tmp/tv_scout_bt_config.json"
+if [ ! -f "$BT_CONFIG" ]; then
+    cp user_data/config/backtest_futures_standard.json "$BT_CONFIG"
+    # Patch pairlist URL (RemotePairList file:// doesn't work in freqtrade 2026.3)
+    sed -i 's|file:///user_data/config/coinmarketcap-pairlist.json|http://127.0.0.1:8765/user_data/config/coinmarketcap-futures-pairlist.json|g' "$BT_CONFIG"
+fi
+
+TIMEFRAMES=("5m" "15m" "30m" "1h" "4h")
+TIMERANGE="20250701-20250930"
+
+best_profit=""
+best_tf=""
+best_trades=""
+best_winrate=""
+best_log=""
+
+for TF in "${TIMEFRAMES[@]}"; do
+    echo "  → Backtesting TestTV_${HASH} @ ${TF}..."
+    log=$(.venv/bin/python -m freqtrade backtesting \
+        --config "$BT_CONFIG" \
+        --strategy TestTV_${HASH} \
+        --timerange "$TIMERANGE" \
+        --timeframe "$TF" \
+        --export trades \
+        2>&1)
+
+    # Parse STRATEGY SUMMARY line
+    tf_profit=$(echo "$log" | grep -oP '│\s*TestTV_\S+\s*│\s*\d+\s*│\s*[-\d.]+\s*│\s*[-\d.]+\s*│\s*([-\d.]+)' | grep -oP '[-\d.]+$')
+    tf_trades=$(echo "$log" | grep -oP '│\s*TestTV_\S+\s*│\s*(\d+)' | grep -oP '\d+$')
+    tf_winrate=$(echo "$log" | grep -oP '│\s*TestTV_\S+.*│\s*([\d.]+)\s*│' | grep -oP '[\d.]+$')
+
+    # Compare: prefer higher profit
+    if [ -z "$best_profit" ] || [ "$(echo "$tf_profit > $best_profit" | bc -l 2>/dev/null || echo 0)" = "1" ]; then
+        best_profit="$tf_profit"
+        best_tf="$TF"
+        best_trades="$tf_trades"
+        best_winrate="$tf_winrate"
+        best_log="$log"
+    fi
+done
+
+backtest_result="$best_log"
+total_profit="$best_profit"
+num_trades="$best_trades"
+win_rate="$best_winrate"
+timeframe_used="$best_tf"
 
 # Extract results
 total_profit=$(echo "$backtest_result" | grep -oP 'Total profit.*?:\s*([-\d.]+)' | grep -oP '[-\d.]+' | tail -1)
@@ -156,12 +195,13 @@ num_trades=$(echo "$backtest_result" | grep -oP 'Trades.*?:\s*(\d+)' | grep -oP 
 win_rate=$(echo "$backtest_result" | grep -oP 'Win rate.*?:\s*([\d.]+)' | grep -oP '[\d.]+' | tail -1)
 
 echo "Backtest Results for $HASH:"
+echo "  Best Timeframe: $timeframe_used"
 echo "  Total Profit: ${total_profit:-N/A}%"
 echo "  Trades: ${num_trades:-N/A}"
 echo "  Win Rate: ${win_rate:-N/A}%"
 
 # Record in results
-echo "| TestTV_${HASH} | $HASH | ${total_profit:-0}% | ${num_trades:-0} | ${win_rate:-0}% |" >> "$RESULTS_FILE"
+echo "| TestTV_${HASH} | $timeframe_used | ${total_profit:-0}% | ${num_trades:-0} | ${win_rate:-0}% |" >> "$RESULTS_FILE"
 
 echo "=== Subagent Done: $HASH ==="
 AGENTSCRIPT

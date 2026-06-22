@@ -117,9 +117,9 @@ class SMAOffsetProtectOptV1(IStrategy):
 
     # Sell signal
     use_exit_signal = True
-    sell_profit_only = False
-    sell_profit_offset = 0.01
-    ignore_roi_if_buy_signal = True
+    exit_profit_only = False
+    exit_profit_offset = 0.01
+    ignore_roi_if_entry_signal = True
 
     # Optimal timeframe for the strategy
     timeframe = "5m"

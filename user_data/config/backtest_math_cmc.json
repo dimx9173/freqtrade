@@ -1,0 +1,54 @@
+{
+  "trading_mode": "futures",
+  "margin_mode": "isolated",
+  "exchange": {
+    "name": "bybit",
+    "key": "",
+    "secret": "",
+    "pair_whitelist": [
+      "BTC/USDT:USDT",
+      "ETH/USDT:USDT",
+      "BNB/USDT:USDT",
+      "XRP/USDT:USDT",
+      "SOL/USDT:USDT",
+      "TRX/USDT:USDT",
+      "HYPE/USDT:USDT",
+      "DOGE/USDT:USDT",
+      "XLM/USDT:USDT",
+      "ZEC/USDT:USDT",
+      "CC/USDT:USDT",
+      "XMR/USDT:USDT",
+      "ADA/USDT:USDT",
+      "LINK/USDT:USDT",
+      "USD1/USDT:USDT",
+      "BCH/USDT:USDT",
+      "M/USDT:USDT",
+      "HBAR/USDT:USDT",
+      "LTC/USDT:USDT",
+      "SUI/USDT:USDT",
+      "NEAR/USDT:USDT"
+    ],
+    "pair_blacklist": []
+  },
+  "entry_pricing": {
+    "price_side": "other",
+    "use_order_book": true,
+    "order_book_top": 1
+  },
+  "exit_pricing": {
+    "price_side": "other",
+    "use_order_book": true,
+    "order_book_top": 1
+  },
+  "max_open_trades": 3,
+  "stake_currency": "USDT",
+  "stake_amount": "unlimited",
+  "dry_run_wallet": 1000,
+  "trailing_stop": false,
+  "stoploss": -0.1,
+  "pairlists": [
+    {
+      "method": "StaticPairList"
+    }
+  ]
+}
