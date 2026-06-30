@@ -13,6 +13,16 @@ LOG_DIR="$FREQTRADE_DIR/user_data/logs"
 cd "$FREQTRADE_DIR"
 source .venv/bin/activate
 
+# Load slot-bound secrets (rollstr integration 2026-06-30)
+if [[ -f "$FREQTRADE_DIR/.env" ]]; then
+    set -a
+    source "$FREQTRADE_DIR/.env"
+    set +a
+    echo "✅ Secrets loaded from .env"
+else
+    echo "⚠️  No .env at $FREQTRADE_DIR/.env - bot will fail to authenticate"
+fi
+
 start_bot() {
     local config=$1
     local strategy=$2
