@@ -36,21 +36,26 @@ start_bot() {
 }
 
 #  Bot 1: NASOSv4
-start_bot "config_1.json" "NASOSv4" "tradesv3_1.sqlite" "NASOSv4"
+start_bot "config_1.tmpl.json" "NASOSv4" "tradesv3_1.sqlite" "NASOSv4"
 
-#  Bot 2: PSV5_Hybrid (Dry-run)
-start_bot "config_2.json" "PSV5_Hybrid" "tradesv3_uat.sqlite" "PSV5_Hybrid"
 
 #  Bot 3: BB_RPB_TSL_BI
-start_bot "config_3.json" "BB_RPB_TSL_BI" "tradesv3_3.sqlite" "BB_RPB_TSL_BI"
+start_bot "config_3.tmpl.json" "BB_RPB_TSL_BI" "tradesv3_3.sqlite" "BB_RPB_TSL_BI"
 
 #  Bot 4: NASOSv5_mod3
-start_bot "config_4.json" "NASOSv5_mod3" "tradesv3_4.sqlite" "NASOSv5_mod3"
+start_bot "config_4.tmpl.json" "NASOSv5_mod3" "tradesv3_4.sqlite" "NASOSv5_mod3"
 
 #  Bot 5: SMAOffsetProtectOptV1
-start_bot "config_5.json" "SMAOffsetProtectOptV1" "tradesv3_5.sqlite" "SMAOffsetProtectOptV1"
+start_bot "config_5.tmpl.json" "SMAOffsetProtectOptV1" "tradesv3_5.sqlite" "SMAOffsetProtectOptV1"
 
 #  Bot 6: ElliotV5_SMA_ninja
-start_bot "config_6.json" "ElliotV5_SMA_ninja" "tradesv3_6.sqlite" "ElliotV5_SMA_ninja"
+start_bot "config_6.tmpl.json" "ElliotV5_SMA_ninja" "tradesv3_6.sqlite" "ElliotV5_SMA_ninja"
+
+#  Bot 2: PSV5_Hybrid — DORMANT (Brian 2026-06-30: 缺好策略前不上)
+#  Template + secrets 已就位,等決定策略再加
+# start_bot "config_2.tmpl.json" "PSV5_Hybrid" "tradesv3_uat.sqlite" "PSV5_Hybrid"
+
+#  Bot 7: PLACEHOLDER - strategy TBD; uncomment when finalized
+# start_bot "config_7.tmpl.json" "PLACEHOLDER_STRATEGY" "tradesv3_7.sqlite" "PLACEHOLDER"
 
 echo "All bots started. Check logs in $LOG_DIR/"
