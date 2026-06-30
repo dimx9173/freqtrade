@@ -1,3 +1,10 @@
+# Secrets — NEVER commit these
+.env
+.env.*
+**/.env
+**/.env.*
+/home/brian/.secrets/
+
 # Freqtrade rules
 config*.json
 *.sqlite
@@ -103,7 +110,6 @@ target/
 # pyenv
 .python-version
 
-.env
 .venv
 .idea
 .vscode
