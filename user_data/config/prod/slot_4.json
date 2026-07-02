@@ -10,6 +10,13 @@
     "trading_mode": "spot",
     "margin_mode": "",
     "trailing_stop": true,
+    "trailing_stop_positive": 0.001,
+    "trailing_stop_positive_offset": 0.03,
+    "minimal_roi": {
+        "0": 0.06,
+        "30": 0.03,
+        "60": 0.015
+    },
     "unfilledtimeout": {
         "entry": 10,
         "exit": 10,
