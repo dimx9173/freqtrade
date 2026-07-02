@@ -46,7 +46,7 @@
     },
     "exchange": {
       "name": "bybit",
-      "key": "OtpI2grQg6AGRU9RSQ", //freqtrade03
+      "key": "OtpI2grQg6AGRU9RSQ",
       "secret": "Us10OmHhYujb8RGoN5L6rtTD9KtQOfKy4Jh7",
         "slippage_allowed": 0.001,
       "ccxt_config": {
@@ -61,8 +61,6 @@
         "enableRateLimit": true,
         "rateLimit": 50
       },
-      // "pair_whitelist": [
-      // ],
       "pair_blacklist": [
       ]
     },
@@ -71,7 +69,7 @@
         "method": "RemotePairList",
         "pairlist_url": "file:///user_data/config/coinmarketcap-pairlist.json",
         "number_assets": 50,
-        "refresh_period": 1800, // 30 minutes
+        "refresh_period": 1800,
         "keep_pairlist_on_failure": true,
         "read_timeout": 60
     }

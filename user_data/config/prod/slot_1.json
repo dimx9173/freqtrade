@@ -59,8 +59,6 @@
             "enableRateLimit": true,
             "rateLimit": 50
         },
-        // "pair_whitelist": [
-        // ],
         "pair_blacklist": [
         ]
     },
@@ -69,7 +67,7 @@
             "method": "RemotePairList",
             "pairlist_url": "file:///user_data/config/coinmarketcap-pairlist.json",
             "number_assets": 50,
-            "refresh_period": 1800, // 30 minutes
+            "refresh_period": 1800,
             "keep_pairlist_on_failure": true,
             "read_timeout": 60
         }
