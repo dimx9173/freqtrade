@@ -10,21 +10,21 @@
         "DOGE/USDT:USDT",
         "LEO/USDT:USDT",
         "ZEC/USDT:USDT",
+        "ADA/USDT:USDT",
         "XLM/USDT:USDT",
         "XMR/USDT:USDT",
-        "CC/USDT:USDT",
-        "ADA/USDT:USDT",
         "LINK/USDT:USDT",
-        "USD1/USDT:USDT",
-        "GRAM/USDT:USDT",
+        "CC/USDT:USDT",
         "BCH/USDT:USDT",
-        "M/USDT:USDT",
+        "GRAM/USDT:USDT",
+        "USD1/USDT:USDT",
         "LTC/USDT:USDT",
         "HBAR/USDT:USDT",
         "SUI/USDT:USDT",
         "USDG/USDT:USDT",
+        "AVAX/USDT:USDT",
         "PYUSD/USDT:USDT",
-        "SHIB/USDT:USDT"
+        "CRO/USDT:USDT"
     ],
     "refresh_period": 1800
 }
