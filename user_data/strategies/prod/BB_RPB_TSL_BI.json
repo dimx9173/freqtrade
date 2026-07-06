@@ -12,8 +12,8 @@
   },
   "stoploss": -0.99,
   "trailing_stop": true,
-  "trailing_stop_positive": 0.01,
-  "trailing_stop_positive_offset": 0.0,
-  "trailing_only_offset_is_reached": false,
+  "trailing_stop_positive": 0.001,
+  "trailing_stop_positive_offset": 0.01,
+  "trailing_only_offset_is_reached": true,
   "max_open_trades": 5
 }
