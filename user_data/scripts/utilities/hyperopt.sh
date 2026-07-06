@@ -63,12 +63,12 @@ echo "========================================"
 
 # 定義策略列表 (ID|config|strategy|months|epochs|spaces|loss)
 configs=(
-  "1|$HOME/freqtrade/user_data/config/config_1.json|NASOSv4|6|500|buy,sell|ProfitDrawDownHyperOptLoss"
-  "2|$HOME/freqtrade/user_data/config/config_2.json|PSV5_Hybrid|6|500|buy|ProfitDrawDownHyperOptLoss"
-  "3|$HOME/freqtrade/user_data/config/config_3.json|BB_RPB_TSL_BI|6|500|buy,sell|MultiMetricHyperOptLoss"
-  "4|$HOME/freqtrade/user_data/config/config_4.json|NASOSv5_mod3|6|500|buy,sell|ProfitDrawDownHyperOptLoss"
-  "5|$HOME/freqtrade/user_data/config/config_5.json|SMAOffsetProtectOptV1|9|500|buy,sell|ProfitDrawDownHyperOptLoss"
-  "6|$HOME/freqtrade/user_data/config/config_6.json|ElliotV5_SMA_ninja|6|400|buy,sell|ProfitDrawOptLoss"
+  "1|$HOME/freqtrade/user_data/config/prod/slot_1.json|NASOSv4|6|500|buy,sell|ProfitDrawDownHyperOptLoss"
+  "2|$HOME/freqtrade/user_data/config/prod/slot_2.json|PSV5_Hybrid|6|500|buy|ProfitDrawDownHyperOptLoss"
+  "3|$HOME/freqtrade/user_data/config/prod/slot_3.json|BB_RPB_TSL_BI|6|500|buy,sell|MultiMetricHyperOptLoss"
+  "4|$HOME/freqtrade/user_data/config/prod/slot_4.json|NASOSv5_mod3|6|500|buy,sell|ProfitDrawDownHyperOptLoss"
+  "5|$HOME/freqtrade/user_data/config/prod/slot_5.json|SMAOffsetProtectOptV1|9|500|buy,sell|ProfitDrawDownHyperOptLoss"
+  "6|$HOME/freqtrade/user_data/config/prod/slot_6.json|ElliotV5_SMA_ninja|6|400|buy,sell|ProfitDrawOptLoss"
 )
 
 # 確保結果目錄存在
