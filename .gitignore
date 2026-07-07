@@ -10,6 +10,8 @@ config*.json
 *.sqlite
 *.sqlite-shm
 *.sqlite-wal
+*.db
+data/
 logfile.txt
 user_data/*
 !user_data/strategy/sample_strategy.py
