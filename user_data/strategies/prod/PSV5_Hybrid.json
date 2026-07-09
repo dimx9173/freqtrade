@@ -1,21 +1,5 @@
 {
   "strategy_name": "PSV5_Hybrid",
-  "params": {
-    "buy": {},
-    "sell": {},
-    "max_open_trades": {
-      "max_open_trades": 5
-    }
-  },
-  "minimal_roi": {
-    "0": 0.06,
-    "180": 0.04,
-    "360": 0.02
-  },
-  "stoploss": -0.04,
-  "trailing_stop": true,
-  "trailing_stop_positive": 0.02,
-  "trailing_stop_positive_offset": 0.04,
-  "trailing_only_offset_is_reached": true,
-  "max_open_trades": 5
+  "source_hyperopt": "strategy_PSV5_Hybrid_2026-07-05_00-45-01.fthypt",
+  "exported_at": "2026-07-09T00:30:24Z"
 }

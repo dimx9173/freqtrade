@@ -17,20 +17,20 @@
       "trailing_only_offset_is_reached": true
     },
     "max_open_trades": {
-      "max_open_trades": Infinity
+      "max_open_trades": 3
     },
     "buy": {
-      "base_nb_candles_buy": 43,
-      "ewo_high": 2.145,
-      "ewo_low": -10.307,
-      "low_offset": 0.981,
-      "rsi_buy": 44
+      "base_nb_candles_buy": 57,
+      "ewo_high": 3.685,
+      "ewo_low": -16.783,
+      "low_offset": 0.961,
+      "rsi_buy": 29
     },
     "sell": {
-      "base_nb_candles_sell": 77,
-      "high_offset": 1.044
+      "base_nb_candles_sell": 51,
+      "high_offset": 0.992
     }
   },
   "ft_stratparam_v": 1,
-  "export_time": "2026-05-22 20:41:55.828579+00:00"
+  "export_time": "2026-07-09 00:51:32.087135+00:00"
 }
