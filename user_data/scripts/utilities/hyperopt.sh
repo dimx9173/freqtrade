@@ -43,7 +43,7 @@ cd $HOME/freqtrade
 #   3  BB_RPB_TSL_BI        → buy, sell
 #   4  NASOSv5_mod3         → buy, sell
 #   5  SMAOffsetProtectOptV1 → buy, sell（9 個月）
-#   6  ElliotV5_SMA_ninja    → buy, sell（ProfitDrawOptLoss）
+#   6  ElliotV5_SMA_ninja    → buy, sell（ProfitDrawDownHyperOptLoss）
 #
 # 輸出:
 #   user_data/hyperopt_results/summary_results_{strategy}.log
@@ -68,7 +68,7 @@ configs=(
   "3|$HOME/freqtrade/user_data/config/prod/slot_3.json|BB_RPB_TSL_BI|6|500|buy,sell|MultiMetricHyperOptLoss"
   "4|$HOME/freqtrade/user_data/config/prod/slot_4.json|NASOSv5_mod3|6|500|buy,sell|ProfitDrawDownHyperOptLoss"
   "5|$HOME/freqtrade/user_data/config/prod/slot_5.json|SMAOffsetProtectOptV1|9|500|buy,sell|ProfitDrawDownHyperOptLoss"
-  "6|$HOME/freqtrade/user_data/config/prod/slot_6.json|ElliotV5_SMA_ninja|6|400|buy,sell|ProfitDrawOptLoss"
+  "6|$HOME/freqtrade/user_data/config/prod/slot_6.json|ElliotV5_SMA_ninja|6|400|buy,sell|ProfitDrawDownHyperOptLoss"
 )
 
 # 確保結果目錄存在
