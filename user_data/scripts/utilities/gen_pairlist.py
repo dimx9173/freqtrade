@@ -1,7 +1,37 @@
-import requests
 import json
+import os
+from pathlib import Path
+
+import requests
+
 
 TOP_CRYPTO = 25
+
+
+def _load_cmc_api_key() -> str:
+    """Load CMC API key from environment or .env file."""
+    # Try environment variable first
+    api_key = os.environ.get("CMC_API_KEY")
+    if api_key:
+        return api_key
+
+    # Fallback: try to load from config/.env (freqtrade path)
+    env_file = Path(__file__).parent.parent.parent / "config" / ".env"
+    if env_file.exists():
+        with open(env_file) as f:
+            for line in f:
+                if line.startswith("CMC_API_KEY="):
+                    return line.split("=", 1)[1].strip()
+
+    # Fallback: try rollstr project config/.env
+    env_file = Path.home() / "project" / "rolling-freqtrade-strategy" / "config" / ".env"
+    if env_file.exists():
+        with open(env_file) as f:
+            for line in f:
+                if line.startswith("CMC_API_KEY="):
+                    return line.split("=", 1)[1].strip()
+
+    raise RuntimeError("CMC_API_KEY not found in environment or config/.env")
 
 
 def get_top_crypto():
@@ -21,7 +51,7 @@ def get_top_crypto():
     }
     headers = {
         "Accepts": "application/json",
-        "X-CMC_PRO_API_KEY": "86423e6b-25f0-4fe2-8be4-18fca8b3b866",  # 替換成你的 API 金鑰
+        "X-CMC_PRO_API_KEY": _load_cmc_api_key(),
     }
 
     try:
