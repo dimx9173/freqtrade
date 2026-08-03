@@ -82,6 +82,14 @@ def get_top_crypto():
                 symbols.append(f"{symbol}/USDT")
                 count += 1
 
+        # === Q2=A: Union with backtest-required pairs ===
+        # Ensure these pairs are always included for backtest coverage
+        BACKTEST_REQUIRED = ["DOT", "UNI", "ATOM", "ETC", "NEAR", "APT"]
+        for symbol in BACKTEST_REQUIRED:
+            pair = f"{symbol}/USDT"
+            if pair not in symbols:
+                symbols.append(pair)
+
         return {"pairs": symbols, "refresh_period": 1800}
 
     except requests.exceptions.RequestException as e:
