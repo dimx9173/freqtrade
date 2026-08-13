@@ -2,40 +2,46 @@
   "strategy_name": "NASOSv5_mod3",
   "params": {
     "buy": {
-      "base_nb_candles_buy": 39,
-      "lookback_candles": 51,
-      "profit_threshold": 1.001,
-      "ewo_high": 7.046,
-      "ewo_high_2": -2.247,
-      "ewo_low": -10.078,
-      "low_offset": 0.965,
-      "low_offset_2": 0.974,
-      "rsi_buy": 62
+      "base_nb_candles_buy": 27,
+      "ewo_high": 11.139,
+      "ewo_high_2": 0.769,
+      "ewo_low": -9.495,
+      "lookback_candles": 16,
+      "low_offset": 0.986,
+      "low_offset_2": 0.953,
+      "profit_threshold": 1.02,
+      "rsi_buy": 11,
+      "rsi_fast_buy": 36
     },
     "sell": {
       "base_nb_candles_sell": 15,
-      "high_offset": 1.01,
-      "high_offset_2": 0.99
+      "high_offset_2": 1.171,
+      "high_offset": 1.01
+    },
+    "roi": {
+      "0": 0.06,
+      "30": 0.03,
+      "60": 0.015,
+      "roi_p0": 0.06,
+      "roi_p1": 0.03,
+      "roi_p2": 0.015,
+      "roi_t0": 30,
+      "roi_t1": 30,
+      "roi_t2": 30
+    },
+    "stoploss": {
+      "stoploss": -0.3
+    },
+    "trailing": {
+      "trailing_stop": true,
+      "trailing_stop_positive": 0.001,
+      "trailing_stop_positive_offset": 0.03,
+      "trailing_only_offset_is_reached": true
     },
     "max_open_trades": {
-      "max_open_trades": 10
+      "max_open_trades": 3
     }
   },
-  "minimal_roi": {
-    "0": 0.06,
-    "30": 0.03,
-    "60": 0.015,
-    "roi_p0": 0.06,
-    "roi_p1": 0.03,
-    "roi_p2": 0.015,
-    "roi_t0": 30,
-    "roi_t1": 30,
-    "roi_t2": 30
-  },
-  "stoploss": -0.3,
-  "trailing_stop": true,
-  "trailing_stop_positive": 0.001,
-  "trailing_stop_positive_offset": 0.03,
-  "trailing_only_offset_is_reached": true,
-  "max_open_trades": 10
+  "ft_stratparam_v": 1,
+  "export_time": "2026-08-13 03:22:48+00:00"
 }

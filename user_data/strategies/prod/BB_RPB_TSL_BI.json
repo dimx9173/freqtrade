@@ -1,19 +1,89 @@
 {
   "strategy_name": "BB_RPB_TSL_BI",
   "params": {
-    "buy": {},
-    "sell": {},
+    "buy": {
+      "buy_adx": 18,
+      "buy_bb_delta": 0.029,
+      "buy_bb_factor": 0.991,
+      "buy_bb_width": 0.075,
+      "buy_bb_width_1h": 0.671,
+      "buy_btc_safe": -63,
+      "buy_btc_safe_1d": -0.054,
+      "buy_cci": -113,
+      "buy_cci_length": 40,
+      "buy_closedelta": 17.549,
+      "buy_closedelta_local_dip": 17.67,
+      "buy_clucha_bbdelta_close": 0.032,
+      "buy_clucha_bbdelta_tail": 1.099,
+      "buy_clucha_close_bblower": 0.033,
+      "buy_clucha_closedelta_close": 0.002,
+      "buy_clucha_rocr_1h": 0.289,
+      "buy_cofi_39_r14": -72.091,
+      "buy_cofi_cti": -0.386,
+      "buy_crsi_local_dip": 10,
+      "buy_ema_cofi": 0.946,
+      "buy_ema_diff": 0.023,
+      "buy_ema_diff_local_dip": 0.023,
+      "buy_ema_high": 1.1,
+      "buy_ema_high_2": 1.06,
+      "buy_ema_high_local_dip": 0.97,
+      "buy_ema_low": 0.951,
+      "buy_ema_low_2": 0.932,
+      "buy_ewo": 3.145,
+      "buy_ewo2_cti": -0.138,
+      "buy_ewo2_r14": -74.955,
+      "buy_ewo_high": 11.551,
+      "buy_ewo_high_2": 2.515,
+      "buy_fastd": 18,
+      "buy_fastk": 11,
+      "buy_max_slip": 0.796,
+      "buy_nfix_39_cti": -0.461,
+      "buy_nfix_39_r14": -86.463,
+      "buy_r_deadfish_bb_factor": 1.156,
+      "buy_r_deadfish_bb_width": 0.19,
+      "buy_r_deadfish_cti": -0.032,
+      "buy_r_deadfish_ema": 1.066,
+      "buy_r_deadfish_r14": -51.578,
+      "buy_r_deadfish_volume_factor": 2.06,
+      "buy_rmi": 43,
+      "buy_rmi_length": 12,
+      "buy_roc_1h": 33,
+      "buy_rsi": 20,
+      "buy_rsi_ewo_2": 22,
+      "buy_rsi_fast": 50,
+      "buy_rsi_fast_ewo_2": 49,
+      "buy_rsi_local_dip": 33,
+      "buy_srsi_fk": 45,
+      "buy_threshold": 0.009
+    },
+    "sell": {
+      "sell_btc_safe": -351,
+      "sell_cmf": -0.089,
+      "sell_deadfish_bb_factor": 1.054,
+      "sell_deadfish_bb_width": 0.134,
+      "sell_deadfish_profit": -0.106,
+      "sell_deadfish_volume_factor": 1.793,
+      "sell_ema": 0.989,
+      "sell_ema_close_delta": 0.026,
+      "sell_rsi_delta": 15,
+      "sell_stoploss_new": 0.72
+    },
+    "roi": {
+      "0": 0.205
+    },
+    "stoploss": {
+      "stoploss": -0.99
+    },
+    "trailing": {
+      "trailing_stop": true,
+      "trailing_stop_positive": 0.001,
+      "trailing_stop_positive_offset": 0.01,
+      "trailing_only_offset_is_reached": true
+    },
     "max_open_trades": {
-      "max_open_trades": 5
+      "max_open_trades": 3
     }
   },
-  "minimal_roi": {
-    "0": 0.205
-  },
-  "stoploss": -0.99,
-  "trailing_stop": true,
-  "trailing_stop_positive": 0.001,
-  "trailing_stop_positive_offset": 0.01,
-  "trailing_only_offset_is_reached": true,
-  "max_open_trades": 5
+  "ft_stratparam_v": 1,
+  "export_time": "2026-08-13 03:22:48+00:00"
 }

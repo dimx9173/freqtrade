@@ -2,34 +2,37 @@
   "strategy_name": "SMAOffsetProtectOptV1",
   "params": {
     "buy": {
-      "base_nb_candles_buy": 47,
-      "ewo_high": 7.787,
-      "ewo_low": -14.946,
-      "low_offset": 0.937,
-      "rsi_buy": 42
+      "base_nb_candles_buy": 52,
+      "ewo_high": 10.953,
+      "ewo_low": -14.872,
+      "low_offset": 0.911,
+      "rsi_buy": 32
     },
     "sell": {
-      "base_nb_candles_sell": 68,
-      "high_offset": 0.993
+      "base_nb_candles_sell": 79,
+      "high_offset": 1.065,
+      "pHSL": -0.051,
+      "pPF_1": 0.016,
+      "pPF_2": 0.054,
+      "pSL_1": 0.011,
+      "pSL_2": 0.039
     },
-    "protection": {
-      "pHSL": -0.07,
-      "pPF_1": 0.01,
-      "pPF_2": 0.047,
-      "pSL_1": 0.015,
-      "pSL_2": 0.029
+    "roi": {
+      "0": 100.0
+    },
+    "stoploss": {
+      "stoploss": -0.1
+    },
+    "trailing": {
+      "trailing_stop": true,
+      "trailing_stop_positive": 0.001,
+      "trailing_stop_positive_offset": 0.01,
+      "trailing_only_offset_is_reached": true
     },
     "max_open_trades": {
       "max_open_trades": 3
     }
   },
-  "minimal_roi": {
-    "0": 100.0
-  },
-  "stoploss": -0.1,
-  "trailing_stop": true,
-  "trailing_stop_positive": 0.001,
-  "trailing_stop_positive_offset": 0.01,
-  "trailing_only_offset_is_reached": true,
-  "max_open_trades": 3
+  "ft_stratparam_v": 1,
+  "export_time": "2026-08-13 03:22:48+00:00"
 }
