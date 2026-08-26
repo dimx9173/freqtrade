@@ -1,27 +1,6 @@
 {
   "strategy_name": "NASOSv4",
   "params": {
-    "buy": {
-      "base_nb_candles_buy": 19,
-      "lookback_candles": 10,
-      "profit_threshold": 1.026,
-      "ewo_high": 2.403,
-      "ewo_high_2": -5.585,
-      "ewo_low": -14.378,
-      "low_offset": 0.984,
-      "low_offset_2": 0.942,
-      "rsi_buy": 72
-    },
-    "sell": {
-      "base_nb_candles_sell": 15,
-      "high_offset": 0.971,
-      "high_offset_2": 1.115,
-      "pHSL": -0.15,
-      "pPF_1": 0.016,
-      "pPF_2": 0.024,
-      "pSL_1": 0.014,
-      "pSL_2": 0.022
-    },
     "roi": {
       "0": 10
     },
@@ -36,8 +15,29 @@
     },
     "max_open_trades": {
       "max_open_trades": 3
+    },
+    "buy": {
+      "ewo_high": 2.403,
+      "ewo_high_2": -5.585,
+      "ewo_low": -14.378,
+      "low_offset": 0.984,
+      "low_offset_2": 0.942,
+      "rsi_buy": 72,
+      "base_nb_candles_buy": 2,
+      "lookback_candles": 12,
+      "profit_threshold": 1.007
+    },
+    "sell": {
+      "pHSL": -0.15,
+      "pPF_1": 0.016,
+      "pPF_2": 0.024,
+      "pSL_1": 0.014,
+      "pSL_2": 0.022,
+      "base_nb_candles_sell": 3,
+      "high_offset": 0.97,
+      "high_offset_2": 1.273
     }
   },
   "ft_stratparam_v": 1,
-  "export_time": "2026-08-13 03:22:48+00:00"
+  "export_time": "2026-08-26 04:50:03.463534+00:00"
 }
