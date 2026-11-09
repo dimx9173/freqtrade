@@ -2,15 +2,15 @@
   "strategy_name": "ElliotV5_SMA_ninja",
   "params": {
     "buy": {
-      "base_nb_candles_buy": 79,
-      "ewo_high": 2.087,
-      "ewo_low": -15.881,
-      "low_offset": 0.968,
-      "rsi_buy": 32
+      "base_nb_candles_buy": 53,
+      "ewo_high": 2.467,
+      "ewo_low": -16.122,
+      "low_offset": 0.976,
+      "rsi_buy": 34
     },
     "sell": {
-      "base_nb_candles_sell": 66,
-      "high_offset": 1.044
+      "base_nb_candles_sell": 58,
+      "high_offset": 1.08
     },
     "roi": {
       "0": 0.215,
@@ -32,5 +32,5 @@
     }
   },
   "ft_stratparam_v": 1,
-  "export_time": "2026-11-08 01:05:04+00:00"
+  "export_time": "2026-11-09 01:05:03+00:00"
 }
