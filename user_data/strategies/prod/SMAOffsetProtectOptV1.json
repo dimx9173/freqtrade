@@ -2,19 +2,19 @@
   "strategy_name": "SMAOffsetProtectOptV1",
   "params": {
     "buy": {
-      "base_nb_candles_buy": 34,
-      "ewo_high": 3.006,
-      "ewo_low": -14.28,
-      "low_offset": 0.986,
-      "rsi_buy": 36
+      "base_nb_candles_buy": 50,
+      "ewo_high": 4.225,
+      "ewo_low": -14.375,
+      "low_offset": 0.975,
+      "rsi_buy": 39
     },
     "sell": {
-      "base_nb_candles_sell": 80,
-      "high_offset": 1.021,
-      "pHSL": -0.094,
-      "pPF_1": 0.017,
-      "pPF_2": 0.048,
-      "pSL_1": 0.015,
+      "base_nb_candles_sell": 33,
+      "high_offset": 1.015,
+      "pHSL": -0.093,
+      "pPF_1": 0.011,
+      "pPF_2": 0.078,
+      "pSL_1": 0.008,
       "pSL_2": 0.063
     },
     "roi": {
@@ -34,5 +34,5 @@
     }
   },
   "ft_stratparam_v": 1,
-  "export_time": "2026-11-17 01:05:02+00:00"
+  "export_time": "2026-11-19 01:05:01+00:00"
 }
