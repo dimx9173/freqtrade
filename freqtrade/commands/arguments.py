@@ -100,6 +100,8 @@ ARGS_BACKTEST_SHOW = [
     "exportfilename",
     "exportdirectory",
     "backtest_show_pair_list",
+    "backtest_show_params",
+    "backtest_export_params",
     "backtest_breakdown",
 ]
 
@@ -278,7 +280,7 @@ ARGS_LOOKAHEAD_ANALYSIS = [
 ARGS_RECURSIVE_ANALYSIS = ["timeframe", "timerange", "dataformat_ohlcv", "pairs", "startup_candle"]
 
 # Command level configs - keep at the bottom of the above definitions
-NO_CONF_REQURIED = [
+NO_CONF_REQUIRED = [
     "backtest-filter",
     "backtesting-show",
     "convert-data",
@@ -346,7 +348,7 @@ class Arguments:
             else:
                 # Else use "config.json".
                 cfgfile = Path.cwd() / DEFAULT_CONFIG
-                conf_optional = "command" in parsed_arg and parsed_arg.command in NO_CONF_REQURIED
+                conf_optional = "command" in parsed_arg and parsed_arg.command in NO_CONF_REQUIRED
                 if cfgfile.is_file() or not conf_optional:
                     # Only inject config if the file exists, or if the config is required
                     parsed_arg.config = [DEFAULT_CONFIG]
@@ -534,7 +536,7 @@ class Arguments:
         # Add edge subcommand
         edge_cmd = subparsers.add_parser(
             "edge",
-            help="Edge module. No longer part of Freqtrade",
+            # help="Edge module. No longer part of Freqtrade",
             parents=[_common_parser, _strategy_parser],
         )
         edge_cmd.set_defaults(func=start_edge)

@@ -26,7 +26,9 @@ class Bybit(Exchange):
     _ft_has: FtHas = {
         "ohlcv_has_history": True,
         "order_time_in_force": ["GTC", "FOK", "IOC", "PO"],
-        "ws_enabled": True,
+        # Must be one of 1, 50, 200, 1000 - ccxt raises BadRequest for anything else.
+        "ws_orderbook_depth": 50,
+        "ws_enabled": {"ohlcv": True, "orderbook": True},
         "trades_has_history": False,  # Endpoint doesn't support pagination
         "fetch_orders_limit_minutes": 7 * 1440,  # 7 days
         "exchange_has_overrides": {
@@ -35,10 +37,14 @@ class Bybit(Exchange):
             # TODO: Can be removed once bybit fully forces all accounts to unified mode.
             "fetchOrder": False,
         },
+        # Demo trading
+        # https://learn.bybit.com/en/bybit-guide/how-to-use-bybit-demo-trading
+        "supports_demo_trading": True,
     }
     _ft_has_futures: FtHas = {
         "ohlcv_has_history": True,
         "funding_fee_candle_limit": 200,
+        "open_interest_candle_limit": 200,
         "stoploss_on_exchange": True,
         "stoploss_order_types": {"limit": "limit", "market": "market"},
         "stoploss_blocks_assets": False,
@@ -326,3 +332,13 @@ class Bybit(Exchange):
                 return dt_from_ts(delivery_time)
 
         return None
+
+
+class BybitEU(Bybit):
+    """Bybit EU exchange class.
+    Minimal adjustment to disable futures trading for the EU version of Bybit.
+    """
+
+    _supported_trading_mode_margin_pairs: list[tuple[TradingMode, MarginMode]] = [
+        (TradingMode.SPOT, MarginMode.NONE),
+    ]

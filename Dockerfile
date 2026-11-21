@@ -1,4 +1,4 @@
-FROM python:3.13.12-slim-trixie AS base
+FROM python:3.14.10-slim-trixie AS base
 
 # Setup env
 ENV LANG=C.UTF-8
@@ -11,32 +11,32 @@ ENV FT_APP_ENV="docker"
 # Prepare environment
 RUN mkdir /freqtrade \
   && apt-get update \
-  && apt-get -y install sudo libatlas3-base curl sqlite3 libgomp1 \
+  && apt-get -y install --no-install-recommends sudo libatlas3-base curl sqlite3 libgomp1 \
   && apt-get clean \
+  && rm -rf /var/lib/apt/lists/* \
   && useradd -u 1000 -G sudo -U -m -s /bin/bash ftuser \
   && chown ftuser:ftuser /freqtrade \
   # Allow sudoers
-  && echo "ftuser ALL=(ALL) NOPASSWD: /bin/chown" >> /etc/sudoers
+  && echo "ftuser ALL=(ALL) NOPASSWD: /bin/chown" >> /etc/sudoers \
+  && pip install --upgrade pip
 
 WORKDIR /freqtrade
 
 # Install dependencies
 FROM base AS python-deps
 RUN  apt-get update \
-  && apt-get -y install build-essential libssl-dev git libffi-dev libgfortran5 pkg-config cmake gcc \
+  && apt-get -y install --no-install-recommends build-essential libssl-dev git libffi-dev libgfortran5 pkg-config cmake gcc \
   && apt-get clean \
+  && rm -rf /var/lib/apt/lists/* \
   && pip install --upgrade pip wheel
 
 # Install dependencies
 COPY --chown=ftuser:ftuser requirements.txt requirements-hyperopt.txt /freqtrade/
 USER ftuser
-RUN  pip install --user --no-cache-dir "numpy<3.0" \
-  && pip install --user --no-cache-dir -r requirements-hyperopt.txt
+RUN  pip install --user --no-cache-dir -r requirements-hyperopt.txt
 
 # Copy dependencies to runtime-image
 FROM base AS runtime-image
-COPY --from=python-deps /usr/local/lib /usr/local/lib
-ENV LD_LIBRARY_PATH=/usr/local/lib
 
 COPY --from=python-deps --chown=ftuser:ftuser /home/ftuser/.local /home/ftuser/.local
 

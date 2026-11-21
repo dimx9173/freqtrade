@@ -51,7 +51,7 @@ class StrategyResolver(IResolver):
         strategy: IStrategy = StrategyResolver._load_strategy(
             strategy_name, config=config, extra_dir=config.get("strategy_path")
         )
-        strategy.ft_load_params_from_file()
+        strategy.ft_set_special_params_from_file()
         # Set attributes
         # Check if we need to override configuration
         # (Attribute name, default, subkey)
@@ -321,7 +321,7 @@ def warn_deprecated_setting(strategy: IStrategy, old: str, new: str, error=False
 
 def check_override(obj, parentclass, attribute: str):
     """
-    Checks if a object overrides the parent class attribute.
+    Checks if an object overrides the parent class attribute.
     :returns: True if the object is overridden.
     """
     return getattr(type(obj), attribute) != getattr(parentclass, attribute)

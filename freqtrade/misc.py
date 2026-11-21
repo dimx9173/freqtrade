@@ -8,8 +8,9 @@ from collections.abc import Iterator, Mapping
 from io import StringIO
 from pathlib import Path
 from typing import Any, TextIO
-from urllib.parse import urlparse
+from urllib.parse import urlparse, urlunparse
 
+import orjson
 import pandas as pd
 import rapidjson
 
@@ -25,7 +26,9 @@ def dump_json_to_file(file_obj: TextIO, data: Any) -> None:
     :param file_obj: File object to write to
     :param data: JSON Data to save
     """
-    rapidjson.dump(data, file_obj, default=str, number_mode=rapidjson.NM_NATIVE)
+    file_obj.write(
+        orjson.dumps(data, default=str, option=orjson.OPT_SERIALIZE_NUMPY).decode("utf-8")
+    )
 
 
 def file_dump_json(filename: Path, data: Any, is_zip: bool = False, log: bool = True) -> None:
@@ -94,6 +97,18 @@ def is_file_in_dir(file: Path, directory: Path) -> bool:
     return file.is_file() and file.parent.samefile(directory)
 
 
+def is_path_in_dir(path: Path, directory: Path) -> bool:
+    """
+    Helper function to check if path is within directory - neither has to exist.
+    :param path: Path to check
+    :param directory: Directory to check against
+        When used in the API, this parameter cannot be user controlled (outside of the config)
+        to avoid security issues.
+    :return: True if path is within directory, False otherwise
+    """
+    return path.resolve().is_relative_to(directory.resolve())
+
+
 def pair_to_filename(pair: str) -> str:
     for ch in ["/", " ", ".", "@", "$", "+", ":"]:
         pair = pair.replace(ch, "_")
@@ -130,12 +145,13 @@ def round_dict(d, n):
 DictMap = dict[str, Any] | Mapping[str, Any]
 
 
-def safe_value_nested(obj: DictMap, keys: str, default_value=None):
+def safe_value_nested(obj: DictMap, keys: str, default_value=None, *, preserve_none=False):
     """
     Search a nested dict for a value.
     :param obj: dict to search in
     :param keys: dot separated keys to search for
     :param default_value: value to return if the key is not found or value is None
+    :param preserve_none: if True, will consider None as a valid value
     :return: value found in dict or default_value
      Sample:
     >>> d = { 'first' : { 'rows' : { 'pass' : 'dog', 'number' : '1' } } }
@@ -144,7 +160,11 @@ def safe_value_nested(obj: DictMap, keys: str, default_value=None):
     """
     nested_obj = obj
     for key in keys.split("."):
-        if isinstance(nested_obj, Mapping) and key in nested_obj and nested_obj[key] is not None:
+        if (
+            isinstance(nested_obj, Mapping)
+            and key in nested_obj
+            and (nested_obj[key] is not None or preserve_none)
+        ):
             nested_obj = nested_obj[key]
         else:
             return default_value
@@ -202,10 +222,10 @@ def parse_db_uri_for_logging(uri: str):
     :param uri: DB URI to parse for logging
     """
     parsed_db_uri = urlparse(uri)
-    if not parsed_db_uri.netloc:  # No need for censoring as no password was provided
+    if parsed_db_uri.password is None:  # No need for censoring as no password was provided
         return uri
-    pwd = parsed_db_uri.netloc.split(":")[1].split("@")[0]
-    return parsed_db_uri.geturl().replace(f":{pwd}@", ":*****@")
+    netloc = parsed_db_uri.netloc.replace(f":{parsed_db_uri.password}@", ":*****@", 1)
+    return urlunparse(parsed_db_uri._replace(netloc=netloc))
 
 
 def dataframe_to_json(dataframe: pd.DataFrame) -> str:
@@ -214,6 +234,12 @@ def dataframe_to_json(dataframe: pd.DataFrame) -> str:
     :param dataframe: A pandas DataFrame
     :returns: A JSON string of the pandas DataFrame
     """
+    date_columns = dataframe.select_dtypes(include=["datetime", "datetime64", "datetimetz"])
+    # Explicit conversion to ms
+    # This used to be part of to_json, but was deprecated in pandas 3
+    for date_column in date_columns:
+        dataframe[date_column] = date_columns[date_column].dt.as_unit("ms").astype("int64")
+
     return dataframe.to_json(orient="split")
 
 

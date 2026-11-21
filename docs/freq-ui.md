@@ -17,7 +17,7 @@ Once the bot is started in trade / dry-run mode (with `freqtrade trade`) - the U
 
 ## Configuration
 
-FreqUI does not have it's own configuration file - but assumes a working setup for the [rest-api](rest-api.md) is available.
+FreqUI does not have its own configuration file - but assumes a working setup for the [rest-api](rest-api.md) is available.
 Please refer to the corresponding documentation page to get setup with freqUI
 
 ## UI
@@ -45,6 +45,23 @@ On this page, you can also interact with the bot by starting and stopping it and
 
 ![FreqUI - trade view](assets/freqUI-trade-pane-dark.png#only-dark)
 ![FreqUI - trade view](assets/freqUI-trade-pane-light.png#only-light)
+
+### Dashboard
+
+The dashboard view provides an overview of the bot's performance and status.
+If multiple bots are connected, the dashboard will show an overview of all connected bots, allowing you to easily switch between them or show just a subset of available bots.
+
+#### Wallet Balance
+
+New in freqtrade 2026.4: This shows the balance of the bot over time.
+
+Compared to the "cumulative Profit" chart, this chart will show the actual balance of the bot over time, including unrealized profit and losses, as well as deposits and withdrawals.
+
+Historic data has re-populated based on available exchange data - however is assumed to be best-effort and may not be 100% accurate.
+More specifically, it won't cover deposits and withdrawals, and will assume a starting balance of current balance - profit/losses.
+
+For clarity - a "Capture start" marker line is shown on the chart, which indicates the point at which the migration to the new wallet balance tracking system happened.
+Only beyond this point, the wallet balance is expected to be accurate.
 
 ### Plot Configurator
 

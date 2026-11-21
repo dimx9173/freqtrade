@@ -6,6 +6,7 @@ import pytest
 
 from freqtrade.enums import ExitType
 from freqtrade.exceptions import OperationalException
+from freqtrade.exchange import timeframe_to_next_date
 from freqtrade.persistence import PairLocks, Trade
 from freqtrade.persistence.trade_model import Order
 from freqtrade.plugins.protectionmanager import ProtectionManager
@@ -634,9 +635,10 @@ def test_LowProfitPairs(mocker, default_conf, fee, caplog, only_per_side):
         is_short=True,
     )
     Trade.commit()
-    assert freqtrade.protections.stop_per_pair("XRP/BTC") != only_per_side
+    # Per-side mode has only one eligible long; combined profit is positive otherwise.
+    assert freqtrade.protections.stop_per_pair("XRP/BTC") is None
     assert not PairLocks.is_pair_locked("XRP/BTC", side="*")
-    assert PairLocks.is_pair_locked("XRP/BTC", side="long") == only_per_side
+    assert not PairLocks.is_pair_locked("XRP/BTC", side="long")
 
     generate_mock_trade(
         "XRP/BTC",
@@ -649,13 +651,89 @@ def test_LowProfitPairs(mocker, default_conf, fee, caplog, only_per_side):
     )
     Trade.commit()
 
-    # Locks due to 2nd trade
-    assert freqtrade.protections.global_stop() != only_per_side
-    assert freqtrade.protections.stop_per_pair("XRP/BTC") != only_per_side
+    # The second eligible long makes profit negative in both modes.
+    assert freqtrade.protections.global_stop() is None
+    assert freqtrade.protections.stop_per_pair("XRP/BTC") is not None
     assert PairLocks.is_pair_locked("XRP/BTC", side="long")
     assert PairLocks.is_pair_locked("XRP/BTC", side="*") != only_per_side
     assert not PairLocks.is_global_lock()
     Trade.commit()
+
+
+@pytest.mark.parametrize(
+    "only_per_side,long_profit_rate,short_profit_rates,expected_lock_side",
+    [
+        pytest.param(True, 0.9, [0.9], None, id="one-per-side-no-lock"),
+        pytest.param(False, 0.9, [0.9], "*", id="combined-loss-locks-both-sides"),
+        pytest.param(True, 1.5, [0.9, 0.9], "short", id="two-losing-shorts-lock"),
+        pytest.param(True, 0.5, [1.1, 1.1], None, id="two-profitable-shorts-no-lock"),
+    ],
+)
+@pytest.mark.usefixtures("init_persistence")
+def test_LowProfitPairs_mixed_sides(
+    mocker,
+    default_conf,
+    fee,
+    time_machine,
+    only_per_side,
+    long_profit_rate,
+    short_profit_rates,
+    expected_lock_side,
+):
+    time_machine.move_to(datetime(2026, 10, 10, 12, tzinfo=UTC), tick=False)
+    default_conf["_strategy_protections"] = [
+        {
+            "method": "LowProfitPairs",
+            "lookback_period": 400,
+            "stop_duration": 60,
+            "trade_limit": 2,
+            "required_profit": 0.0,
+            "only_per_side": only_per_side,
+        }
+    ]
+    freqtrade = get_patched_freqtradebot(mocker, default_conf)
+    pair = "XRP/BTC"
+    # The newer long must not extend a short-only lock or affect the shorts' profit.
+    long_trade = generate_mock_trade(
+        pair,
+        fee.return_value,
+        False,
+        exit_reason=ExitType.EXIT_SIGNAL.value,
+        min_ago_close=5,
+        profit_rate=long_profit_rate,
+    )
+    short_trades = [
+        generate_mock_trade(
+            pair,
+            fee.return_value,
+            False,
+            exit_reason=ExitType.EXIT_SIGNAL.value,
+            min_ago_open=200 - index * 10,
+            min_ago_close=30 - index * 10,
+            profit_rate=profit_rate,
+            is_short=True,
+        )
+        for index, profit_rate in enumerate(short_profit_rates)
+    ]
+
+    lock = freqtrade.protections.stop_per_pair(pair, side="short")
+    if expected_lock_side is None:
+        assert lock is None
+    else:
+        assert lock is not None
+        assert lock.side == expected_lock_side
+        latest_trade = short_trades[-1] if only_per_side else long_trade
+        assert lock.lock_end_time_utc == timeframe_to_next_date(
+            PairLocks.timeframe, latest_trade.close_date_utc + timedelta(minutes=60)
+        )
+
+    if only_per_side:
+        assert freqtrade.protections.stop_per_pair(pair, side="long") is None
+    assert PairLocks.is_pair_locked(pair, side="long") == (expected_lock_side == "*")
+    assert PairLocks.is_pair_locked(pair, side="short") == (expected_lock_side is not None)
+    assert PairLocks.is_pair_locked(pair, side="*") == (expected_lock_side == "*")
+    assert freqtrade.protections.global_stop() is None
+    assert not PairLocks.is_global_lock()
 
 
 @pytest.mark.usefixtures("init_persistence")
@@ -985,8 +1063,10 @@ def test_MaxDrawdown_calculation_mode_dispatch(
                 "trade_limit": 2,
                 "stop_duration": 60,
             },
-            "[{'StoplossGuard': 'StoplossGuard - Frequent Stoploss Guard, "
-            "2 stoplosses with profit < 0.00% within 60 minutes.'}]",
+            (
+                "[{'StoplossGuard': 'StoplossGuard - Frequent Stoploss Guard, "
+                "2 stoplosses with profit < 0.00% within 60 minutes.'}]"
+            ),
             None,
         ),
         (
@@ -996,14 +1076,18 @@ def test_MaxDrawdown_calculation_mode_dispatch(
         ),
         (
             {"method": "LowProfitPairs", "lookback_period": 60, "stop_duration": 60},
-            "[{'LowProfitPairs': 'LowProfitPairs - Low Profit Protection, locks pairs with "
-            "profit < 0.0 within 60 minutes.'}]",
+            (
+                "[{'LowProfitPairs': 'LowProfitPairs - Low Profit Protection, locks pairs with "
+                "profit < 0.0 within 60 minutes.'}]"
+            ),
             None,
         ),
         (
             {"method": "MaxDrawdown", "lookback_period": 60, "stop_duration": 60},
-            "[{'MaxDrawdown': 'MaxDrawdown - Max drawdown protection, stop trading "
-            "if drawdown is > 0.0 within 60 minutes.'}]",
+            (
+                "[{'MaxDrawdown': 'MaxDrawdown - Max drawdown protection, stop trading "
+                "if drawdown is > 0.0 within 60 minutes.'}]"
+            ),
             None,
         ),
         (
@@ -1014,8 +1098,10 @@ def test_MaxDrawdown_calculation_mode_dispatch(
                 "required_profit": -0.05,
                 "stop_duration": 60,
             },
-            "[{'StoplossGuard': 'StoplossGuard - Frequent Stoploss Guard, "
-            "2 stoplosses with profit < -5.00% within 12 candles.'}]",
+            (
+                "[{'StoplossGuard': 'StoplossGuard - Frequent Stoploss Guard, "
+                "2 stoplosses with profit < -5.00% within 12 candles.'}]"
+            ),
             None,
         ),
         (
@@ -1025,14 +1111,18 @@ def test_MaxDrawdown_calculation_mode_dispatch(
         ),
         (
             {"method": "LowProfitPairs", "lookback_period_candles": 11, "stop_duration": 60},
-            "[{'LowProfitPairs': 'LowProfitPairs - Low Profit Protection, locks pairs with "
-            "profit < 0.0 within 11 candles.'}]",
+            (
+                "[{'LowProfitPairs': 'LowProfitPairs - Low Profit Protection, locks pairs with "
+                "profit < 0.0 within 11 candles.'}]"
+            ),
             None,
         ),
         (
             {"method": "MaxDrawdown", "lookback_period_candles": 20, "stop_duration": 60},
-            "[{'MaxDrawdown': 'MaxDrawdown - Max drawdown protection, stop trading "
-            "if drawdown is > 0.0 within 20 candles.'}]",
+            (
+                "[{'MaxDrawdown': 'MaxDrawdown - Max drawdown protection, stop trading "
+                "if drawdown is > 0.0 within 20 candles.'}]"
+            ),
             None,
         ),
         (
@@ -1051,20 +1141,26 @@ def test_MaxDrawdown_calculation_mode_dispatch(
                 "required_profit": -0.05,
                 "unlock_at": "01:00",
             },
-            "[{'StoplossGuard': 'StoplossGuard - Frequent Stoploss Guard, "
-            "2 stoplosses with profit < -5.00% within 12 candles.'}]",
+            (
+                "[{'StoplossGuard': 'StoplossGuard - Frequent Stoploss Guard, "
+                "2 stoplosses with profit < -5.00% within 12 candles.'}]"
+            ),
             None,
         ),
         (
             {"method": "LowProfitPairs", "lookback_period_candles": 11, "unlock_at": "03:00"},
-            "[{'LowProfitPairs': 'LowProfitPairs - Low Profit Protection, locks pairs with "
-            "profit < 0.0 within 11 candles.'}]",
+            (
+                "[{'LowProfitPairs': 'LowProfitPairs - Low Profit Protection, locks pairs with "
+                "profit < 0.0 within 11 candles.'}]"
+            ),
             None,
         ),
         (
             {"method": "MaxDrawdown", "lookback_period_candles": 20, "unlock_at": "04:00"},
-            "[{'MaxDrawdown': 'MaxDrawdown - Max drawdown protection, stop trading "
-            "if drawdown is > 0.0 within 20 candles.'}]",
+            (
+                "[{'MaxDrawdown': 'MaxDrawdown - Max drawdown protection, stop trading "
+                "if drawdown is > 0.0 within 20 candles.'}]"
+            ),
             None,
         ),
     ],

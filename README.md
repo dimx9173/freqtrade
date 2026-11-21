@@ -32,25 +32,26 @@ Please read the [exchange-specific notes](https://www.freqtrade.io/en/stable/exc
 - [X] [Binance](https://www.binance.com/)
 - [X] [BingX](https://bingx.com/invite/0EM9RX)
 - [X] [Bitget](https://www.bitget.com/)
-- [X] [Bitmart](https://bitmart.com/)
+- [X] [Bybit EU](https://bybit.eu/)
 - [X] [Bybit](https://bybit.com/)
-- [X] [Gate.io](https://www.gate.io/ref/6266643)
+- [X] [Gate EU](https://www.gate.com/en-eu)
+- [X] [Gate](https://www.gate.com/ref/6266643)
 - [X] [HTX](https://www.htx.com/)
 - [X] [Hyperliquid](https://hyperliquid.xyz/) (A decentralized exchange, or DEX)
 - [X] [Kraken](https://kraken.com/)
-- [X] [OKX](https://okx.com/)
 - [X] [MyOKX](https://okx.com/) (OKX EEA)
+- [X] [OKX](https://okx.com/)
 - [ ] [potentially many others](https://github.com/ccxt/ccxt/). _(We cannot guarantee they will work)_
 
 ### Supported Futures Exchanges
 
 - [X] [Binance](https://www.binance.com/)
 - [X] [Bitget](https://www.bitget.com/)
-- [X] [Gate.io](https://www.gate.io/ref/6266643)
-- [X] [Hyperliquid](https://hyperliquid.xyz/) (A decentralized exchange, or DEX)
-- [X] [OKX](https://okx.com/)
 - [X] [Bybit](https://bybit.com/)
+- [X] [Gate](https://www.gate.com/ref/6266643)
+- [X] [Hyperliquid](https://hyperliquid.xyz/) (A decentralized exchange, or DEX)
 - [X] [Kraken](https://www.kraken.com/features/futures)
+- [X] [OKX](https://okx.com/)
 
 Please make sure to read the [exchange specific notes](https://www.freqtrade.io/en/stable/exchanges/), as well as the [trading with leverage](https://www.freqtrade.io/en/stable/leverage/) documentation before diving in.
 
@@ -69,7 +70,7 @@ Please find the complete documentation on the [freqtrade website](https://www.fr
 
 ## Features
 
-- [x] **Based on Python 3.11+**: For botting on any operating system - Windows, macOS and Linux.
+- [x] **Based on Python 3.12+**: For botting on any operating system - Windows, macOS and Linux.
 - [x] **Persistence**: Persistence is achieved through sqlite.
 - [x] **Dry-run**: Run the bot without paying money.
 - [x] **Backtesting**: Run a simulation of your buy/sell strategy.
@@ -227,7 +228,7 @@ To run this bot we recommend you a cloud instance with a minimum of:
 
 ### Software requirements
 
-- [Python >= 3.11](http://docs.python-guide.org/en/latest/starting/installation/)
+- [Python >= 3.12](http://docs.python-guide.org/en/latest/starting/installation/)
 - [pip](https://pip.pypa.io/en/stable/installing/)
 - [git](https://git-scm.com/book/en/v2/Getting-Started-Installing-Git)
 - [TA-Lib](https://ta-lib.github.io/ta-lib-python/)

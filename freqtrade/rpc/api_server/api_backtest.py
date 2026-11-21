@@ -1,7 +1,7 @@
 import asyncio
 import logging
 from copy import deepcopy
-from datetime import datetime
+from io import StringIO
 from pathlib import Path
 from typing import Any
 
@@ -12,27 +12,37 @@ from freqtrade.configuration import remove_exchange_credentials
 from freqtrade.configuration.config_validation import validate_config_consistency
 from freqtrade.constants import Config
 from freqtrade.data.btanalysis import (
+    backtest_strategy_dir,
     delete_backtest_result,
     get_backtest_market_change,
     get_backtest_result,
     get_backtest_resultlist,
+    get_backtest_wallet_change,
     load_and_merge_backtest_result,
+    load_file_from_zip,
     update_backtest_metadata,
 )
-from freqtrade.enums import BacktestState
+from freqtrade.enums import BacktestState, RunMode
 from freqtrade.exceptions import ConfigurationError, DependencyException, OperationalException
 from freqtrade.ft_types import get_BacktestResultType_default
-from freqtrade.misc import deep_merge_dicts, is_file_in_dir
+from freqtrade.misc import deep_merge_dicts, is_file_in_dir, json_load
+from freqtrade.rpc.api_server.api_pairlists import handleExchangePayload
 from freqtrade.rpc.api_server.api_schemas import (
     BacktestHistoryEntry,
     BacktestMarketChange,
     BacktestMetadataUpdate,
+    BacktestPairHistoryRequest,
     BacktestRequest,
     BacktestResponse,
+    ExchangeModePayloadMixin,
+    PairHistory,
+    StrategyName,
+    WalletHistoryResponse,
 )
-from freqtrade.rpc.api_server.deps import get_config, verify_strategy
+from freqtrade.rpc.api_server.deps import get_config, get_exchange
 from freqtrade.rpc.api_server.webserver_bgwork import ApiBG
-from freqtrade.rpc.rpc import RPCException
+from freqtrade.rpc.rpc import RPC, RPCException
+from freqtrade.util import dt_now
 
 
 logger = logging.getLogger(__name__)
@@ -41,33 +51,51 @@ logger = logging.getLogger(__name__)
 router = APIRouter()
 
 
-def __run_backtest_bg(btconfig: Config):
+def __run_backtest_bg(
+    btconfig: Config, job_id: str, strategy_params: list[dict[str, Any]] | None = None
+):
     from freqtrade.data.metrics import combined_dataframes_with_rel_mean
     from freqtrade.optimize.optimize_reports import generate_backtest_stats, store_backtest_results
     from freqtrade.resolvers import StrategyResolver
 
+    job = ApiBG.jobs[job_id]
+    job["is_running"] = True
     asyncio.set_event_loop(asyncio.new_event_loop())
     try:
         # Reload strategy
         lastconfig = ApiBG.bt["last_config"]
         strat = StrategyResolver.load_strategy(btconfig)
+        strat.ft_set_api_params(strategy_params)
         validate_config_consistency(btconfig)
         time_settings_changed = (
             lastconfig.get("timeframe") != strat.timeframe
             or lastconfig.get("timeframe_detail") != btconfig.get("timeframe_detail")
             or lastconfig.get("timerange") != btconfig["timerange"]
         )
+        from freqtrade.optimize.backtesting import Backtesting
+
+        def ft_callback(task) -> None:
+            job["progress_tasks"][str(task.id)] = {
+                "progress": task.completed,
+                "total": task.total,
+                "description": task.description,
+            }
 
         if not ApiBG.bt["bt"] or time_settings_changed:
-            from freqtrade.optimize.backtesting import Backtesting
-
-            ApiBG.bt["bt"] = Backtesting(btconfig)
+            job["progress_tasks"] = {}
+            ApiBG.bt["bt"] = Backtesting(btconfig, progress_callback=ft_callback)
+            if not ApiBG.bt["bt"]:
+                raise DependencyException("Backtesting instance not initialized.")
         else:
+            ApiBG.bt["bt"]._progress_callback = ft_callback
             ApiBG.bt["bt"].config = deep_merge_dicts(btconfig, ApiBG.bt["bt"].config)
             ApiBG.bt["bt"].init_backtest()
+        cachedBt: Backtesting = ApiBG.bt["bt"]
         # Only reload data if timerange is open or settings changed
         if not ApiBG.bt["data"] or not ApiBG.bt["timerange"] or time_settings_changed:
-            ApiBG.bt["data"], ApiBG.bt["timerange"] = ApiBG.bt["bt"].load_bt_data()
+            ApiBG.bt["data"], ApiBG.bt["timerange"] = cachedBt.load_bt_data()
+            if not ApiBG.bt["data"] or not ApiBG.bt["timerange"]:
+                raise DependencyException("Backtesting data not loaded.")
 
         lastconfig["timerange"] = btconfig["timerange"]
         lastconfig["timeframe_detail"] = btconfig.get("timeframe_detail")
@@ -75,24 +103,24 @@ def __run_backtest_bg(btconfig: Config):
         lastconfig["enable_protections"] = btconfig.get("enable_protections")
         lastconfig["dry_run_wallet"] = btconfig.get("dry_run_wallet")
 
-        ApiBG.bt["bt"].enable_protections = btconfig.get("enable_protections", False)
-        ApiBG.bt["bt"].strategylist = [strat]
-        ApiBG.bt["bt"].results = get_BacktestResultType_default()
-        ApiBG.bt["bt"].load_prior_backtest()
+        cachedBt.enable_protections = btconfig.get("enable_protections", False)
+        cachedBt.strategylist = [strat]
+        cachedBt.results = get_BacktestResultType_default()
+        cachedBt.load_prior_backtest()
 
-        ApiBG.bt["bt"].abort = False
+        cachedBt.abort = False
         strategy_name = strat.get_strategy_name()
-        if ApiBG.bt["bt"].results and strategy_name in ApiBG.bt["bt"].results["strategy"]:
+        if cachedBt.results and strategy_name in cachedBt.results["strategy"]:
             # When previous result hash matches - reuse that result and skip backtesting.
             logger.info(f"Reusing result of previous backtest for {strategy_name}")
         else:
-            min_date, max_date = ApiBG.bt["bt"].backtest_one_strategy(
+            min_date, max_date = cachedBt.backtest_one_strategy(
                 strat, ApiBG.bt["data"], ApiBG.bt["timerange"]
             )
 
-            ApiBG.bt["bt"].results = generate_backtest_stats(
+            cachedBt.results = generate_backtest_stats(
                 ApiBG.bt["data"],
-                ApiBG.bt["bt"].all_bt_content,
+                cachedBt.all_bt_content,
                 min_date=min_date,
                 max_date=max_date,
             )
@@ -103,44 +131,55 @@ def __run_backtest_bg(btconfig: Config):
                 )
                 fn = store_backtest_results(
                     btconfig,
-                    ApiBG.bt["bt"].results,
-                    datetime.now().strftime("%Y-%m-%d_%H-%M-%S"),
+                    cachedBt.results,
+                    dt_now().strftime("%Y-%m-%d_%H-%M-%S"),
                     market_change_data=combined_res,
-                    strategy_files={
-                        s.get_strategy_name(): s.__file__ for s in ApiBG.bt["bt"].strategylist
+                    wallet_summary={
+                        s: x["wallet_summary"]
+                        for s, x in cachedBt.all_bt_content.items()
+                        if "wallet_summary" in x
                     },
+                    strategy_files={
+                        s.get_strategy_name(): s.__file__ for s in cachedBt.strategylist
+                    },
+                    # Store the used parameters if the API provided overrides
+                    strategy_params=(
+                        {strategy_name: strat.ft_used_params} if strategy_params else None
+                    ),
                 )
-                ApiBG.bt["bt"].results["metadata"][strategy_name]["filename"] = str(fn.stem)
-                ApiBG.bt["bt"].results["metadata"][strategy_name]["strategy"] = strategy_name
-        ApiBG.bt["bt"].reset_backtest()
+                cachedBt.results["metadata"][strategy_name]["filename"] = str(fn.stem)
+                cachedBt.results["metadata"][strategy_name]["strategy"] = strategy_name
+        cachedBt.reset_backtest()
+        job["status"] = "success"
         logger.info("Backtest finished.")
 
     except ConfigurationError as e:
         logger.error(f"Backtesting encountered a configuration Error: {e}")
+        job["status"] = "failed"
+        job["error"] = str(e)
 
     except (Exception, OperationalException, DependencyException) as e:
         logger.exception(f"Backtesting caused an error: {e}")
-        ApiBG.bt["bt_error"] = str(e)
+        job["status"] = "failed"
+        job["error"] = str(e)
     finally:
-        ApiBG.bgtask_running = False
+        job["is_running"] = False
+        ApiBG.analysis_running = False
 
 
 @router.post("/backtest", response_model=BacktestResponse)
 async def api_start_backtest(
     bt_settings: BacktestRequest, background_tasks: BackgroundTasks, config=Depends(get_config)
 ):
-    ApiBG.bt["bt_error"] = None
     """Start backtesting if not done so already"""
-    if ApiBG.bgtask_running:
+    if ApiBG.analysis_running:
         raise RPCException("Bot Background task already running")
 
-    verify_strategy(bt_settings.strategy)
-
     btconfig = deepcopy(config)
+    btconfig["runmode"] = RunMode.BACKTEST
     remove_exchange_credentials(btconfig["exchange"], True)
-    settings = dict(bt_settings)
-    if settings.get("freqai", None) is not None:
-        settings["freqai"] = dict(settings["freqai"])
+    settings = bt_settings.model_dump(mode="python")
+    strategy_params: list[dict[str, Any]] | None = settings.pop("strategy_params", None)
     # Pydantic models will contain all keys, but non-provided ones are None
 
     btconfig = deep_merge_dicts(settings, btconfig, allow_null_overrides=False)
@@ -154,9 +193,22 @@ async def api_start_backtest(
 
     # Start backtesting
     # Initialize backtesting object
+    job_id = ApiBG.get_job_id()
+    ApiBG.jobs[job_id] = {
+        "category": "backtest",
+        "status": "pending",
+        "progress": None,
+        "progress_tasks": {},
+        "is_running": False,
+        "result": {},
+        "error": None,
+    }
+    ApiBG.bt["job_id"] = job_id
 
-    background_tasks.add_task(__run_backtest_bg, btconfig=btconfig)
-    ApiBG.bgtask_running = True
+    background_tasks.add_task(
+        __run_backtest_bg, btconfig=btconfig, job_id=job_id, strategy_params=strategy_params
+    )
+    ApiBG.analysis_running = True
 
     return {
         "status": "running",
@@ -171,18 +223,26 @@ async def api_start_backtest(
 def api_get_backtest():
     """
     Get backtesting result.
-    Returns Result after backtesting has been ran.
+    Returns Result after backtesting has been run.
     """
     from freqtrade.persistence import LocalTrade
 
-    if ApiBG.bgtask_running:
+    job = ApiBG.jobs.get(ApiBG.bt.get("job_id") or "")
+
+    if ApiBG.analysis_running:
+        bt = ApiBG.bt["bt"]
+        progress_tasks = (job.get("progress_tasks") if job else None) or {}
+        # Derive the legacy step/progress fields from the inner/detail task, preserving
+        # the previous per-phase semantics.
+        detail = progress_tasks.get(str(bt._progress_task), {}) if bt else {}
+        detail_total = detail.get("total") or 0
         return {
             "status": "running",
             "running": True,
-            "step": (
-                ApiBG.bt["bt"].progress.action if ApiBG.bt["bt"] else str(BacktestState.STARTUP)
+            "step": detail.get("description", str(BacktestState.STARTUP)),
+            "progress": (
+                max(min(detail.get("progress", 0) / detail_total, 1), 0) if detail_total else 0
             ),
-            "progress": ApiBG.bt["bt"].progress.progress if ApiBG.bt["bt"] else 0,
             "trade_count": len(LocalTrade.bt_trades),
             "status_msg": "Backtest running",
         }
@@ -195,13 +255,13 @@ def api_get_backtest():
             "progress": 0,
             "status_msg": "Backtest not yet executed",
         }
-    if ApiBG.bt["bt_error"]:
+    if job and job["error"]:
         return {
             "status": "error",
             "running": False,
             "step": "",
             "progress": 0,
-            "status_msg": f"Backtest failed with {ApiBG.bt['bt_error']}",
+            "status_msg": f"Backtest failed with {job['error']}",
         }
 
     return {
@@ -217,7 +277,7 @@ def api_get_backtest():
 @router.delete("/backtest", response_model=BacktestResponse)
 def api_delete_backtest():
     """Reset backtesting"""
-    if ApiBG.bgtask_running:
+    if ApiBG.analysis_running:
         return {
             "status": "running",
             "running": True,
@@ -231,6 +291,7 @@ def api_delete_backtest():
         ApiBG.bt["bt"] = None
         del ApiBG.bt["data"]
         ApiBG.bt["data"] = None
+        ApiBG.bt["job_id"] = None
         logger.info("Backtesting reset")
     return {
         "status": "reset",
@@ -243,7 +304,7 @@ def api_delete_backtest():
 
 @router.get("/backtest/abort", response_model=BacktestResponse)
 def api_backtest_abort():
-    if not ApiBG.bgtask_running:
+    if not ApiBG.analysis_running:
         return {
             "status": "not_running",
             "running": False,
@@ -268,7 +329,7 @@ def api_backtest_history(config=Depends(get_config)):
 
 
 @router.get("/backtest/history/result", response_model=BacktestResponse)
-def api_backtest_history_result(filename: str, strategy: str, config=Depends(get_config)):
+def api_backtest_history_result(filename: str, strategy: StrategyName, config=Depends(get_config)):
     # Get backtest result history, read from metadata files
     bt_results_base: Path = config["user_data_dir"] / "backtest_results"
     for ext in [".zip", ".json"]:
@@ -354,3 +415,102 @@ def api_get_backtest_market_change(file: str, config=Depends(get_config)):
         "data": df.values.tolist(),
         "length": len(df),
     }
+
+
+@router.get(
+    "/backtest/history/{file}/{strategy}/wallet",
+    response_model=WalletHistoryResponse,
+    tags=["webserver", "backtest"],
+)
+def api_get_backtest_wallet(file: str, strategy: StrategyName, config=Depends(get_config)):
+    bt_results_base: Path = config["user_data_dir"] / "backtest_results"
+    file_abs = (bt_results_base / file).with_suffix(".zip")
+    # Ensure file is in backtest_results directory
+    if not is_file_in_dir(file_abs, bt_results_base):
+        raise HTTPException(status_code=400, detail="Unable to retrieve wallet history.")
+
+    results = get_backtest_wallet_change(file_abs, strategy)
+    if results is None:
+        raise HTTPException(status_code=404, detail="Unable to retrieve wallet history.")
+    # Consolidate the wallet to the base currency
+    results.loc[:, "total_quote"] = results["rate"] * results["balance"]
+    results = results.groupby(["date", "__date_ts"]).agg({"total_quote": "sum"}).reset_index()
+
+    return {
+        "columns": results.columns.tolist(),
+        "data": results.values.tolist(),
+        "length": len(results),
+    }
+
+
+@router.post(
+    "/backtest/history/{file}/{strategy}/pair_history",
+    response_model=PairHistory,
+    tags=["webserver", "backtest"],
+)
+def api_backtest_pair_history(
+    file: str,
+    strategy: StrategyName,
+    payload: BacktestPairHistoryRequest,
+    config=Depends(get_config),
+):
+    """
+    Analyze a pair with the strategy and parameters stored in a backtest result.
+    Contrary to /pair_history, this uses the strategy as it was at the time of the backtest,
+    instead of the current version in the strategy directory.
+    """
+    bt_results_base: Path = config["user_data_dir"] / "backtest_results"
+    file_abs = (bt_results_base / file).with_suffix(".zip")
+    # Ensure file is in backtest_results directory
+    if not is_file_in_dir(file_abs, bt_results_base):
+        raise HTTPException(status_code=404, detail="File not found.")
+
+    bt_result = next((r for r in get_backtest_result(file_abs) if r["strategy"] == strategy), None)
+    if bt_result is None:
+        raise HTTPException(status_code=404, detail=f"Strategy {strategy} not found in {file}.")
+
+    # Older results may not have these stored in their metadata.
+    if not (timeframe := bt_result["timeframe"]):
+        raise HTTPException(
+            status_code=422, detail=f"Backtest result {file} does not contain a timeframe."
+        )
+    timerange = payload.timerange
+    if not timerange:
+        # backtest_start_ts are in the backtest output files since 2 years.
+        timerange = f"{bt_result['backtest_start_ts']}-{bt_result['backtest_end_ts']}"
+
+    config_loc = deepcopy(config)
+    config_loc.update({"strategy": strategy, "timeframe": timeframe, "timerange": timerange})
+
+    try:
+        # Exchange settings of the backtest may differ from the current webserver config.
+        bt_config = json_load(
+            StringIO(load_file_from_zip(file_abs, f"{file_abs.stem}_config.json").decode("utf-8"))
+        )
+        handleExchangePayload(
+            ExchangeModePayloadMixin(
+                exchange=bt_config.get("exchange", {}).get("name"),
+                trading_mode=bt_config.get("trading_mode", "spot"),
+                margin_mode=bt_config.get("margin_mode"),
+            ),
+            config_loc,
+        )
+        # The strategy is imported lazily, so the directory must exist for the whole call.
+        with backtest_strategy_dir(file_abs, strategy) as strategy_dir:
+            config_loc["strategy_path"] = str(strategy_dir)
+            exchange = get_exchange(config_loc)
+            validate_config_consistency(config_loc)
+
+            return RPC._rpc_analysed_history_full(
+                config_loc, payload.pair, timeframe, exchange, payload.columns, False
+            )
+    except ConfigurationError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except ValueError as e:
+        # Older results may not contain the config or the strategy.
+        raise HTTPException(
+            status_code=422, detail=f"Backtest result {file} cannot be replayed: {e}"
+        )
+    except Exception as e:
+        logger.exception("Error in api_backtest_pair_history")
+        raise HTTPException(status_code=502, detail=str(e))
