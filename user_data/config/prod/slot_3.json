@@ -111,7 +111,7 @@
           "listen_ip_address": "0.0.0.0",
           "listen_port": 13993,
           "verbosity": "info",
-          "jwt_secret_key": "dupx4657",
+          "jwt_secret_key": "a5cb7307c80cbf751a820cd8f211f74494e6f3be560d69be",
           "CORS_origins": ["http://46.224.196.164:13991"],
           "username": "carlos",
           "password": "dupx4657"
