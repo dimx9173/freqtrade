@@ -2,20 +2,20 @@
   "strategy_name": "NASOSv5_mod3",
   "params": {
     "buy": {
-      "base_nb_candles_buy": 23,
-      "ewo_high": 7.162,
-      "ewo_high_2": 2.149,
-      "ewo_low": -9.811,
-      "lookback_candles": 57,
-      "low_offset": 0.985,
-      "low_offset_2": 0.986,
-      "profit_threshold": 1.035,
-      "rsi_buy": 42,
+      "base_nb_candles_buy": 19,
+      "ewo_high": 3.439,
+      "ewo_high_2": 2.859,
+      "ewo_low": -8.142,
+      "lookback_candles": 25,
+      "low_offset": 0.981,
+      "low_offset_2": 0.956,
+      "profit_threshold": 1.02,
+      "rsi_buy": 38,
       "rsi_fast_buy": 50
     },
     "sell": {
-      "base_nb_candles_sell": 18,
-      "high_offset_2": 1.312,
+      "base_nb_candles_sell": 12,
+      "high_offset_2": 1.458,
       "high_offset": 1.01
     },
     "roi": {
@@ -37,5 +37,5 @@
     }
   },
   "ft_stratparam_v": 1,
-  "export_time": "2026-11-24 01:05:02+00:00"
+  "export_time": "2026-11-26 01:05:02+00:00"
 }
